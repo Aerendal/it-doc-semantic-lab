@@ -1,0 +1,17 @@
+{
+  "sections": [
+    {"canonical_role": "document_goal", "status": "complete"},
+    {"canonical_role": "domain_taxonomy", "status": "complete"},
+    {"canonical_role": "architecture_overview", "status": "complete"},
+    {"canonical_role": "module_specification", "status": "complete"},
+    {"canonical_role": "output_contract", "status": "complete"},
+    {"canonical_role": "data_model", "status": "complete"},
+    {"canonical_role": "implementation_plan", "status": "partial"},
+    {"canonical_role": "test_strategy", "status": "partial"},
+    {"canonical_role": "risk_register", "status": "missing"},
+    {"canonical_role": "decision_log", "status": "missing"},
+    {"canonical_role": "acceptance_criteria", "status": "missing"},
+    {"canonical_role": "mvp_scope", "status": "missing"},
+    {"canonical_role": "ownership_model", "status": "missing"}
+  ]
+}

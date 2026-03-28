@@ -1,0 +1,69 @@
+# Document class registry
+# Each class defines the canonical roles required for that document type.
+
+classes:
+  nlp_algorithm_architecture_spec:
+    description: "Architecture spec for NLP/algorithm systems"
+    required_roles:
+      - document_goal
+      - domain_taxonomy
+      - architecture_overview
+      - module_specification
+      - output_contract
+      - data_model
+    optional_roles:
+      - implementation_plan
+      - test_strategy
+      - risk_register
+      - decision_log
+      - acceptance_criteria
+      - mvp_scope
+      - ownership_model
+    keywords:
+      - algorytm
+      - architektura
+      - moduł
+      - warstwa
+      - morfologia
+      - pipeline
+
+  project_architecture_concept:
+    description: "High-level project architecture concept document"
+    required_roles:
+      - document_goal
+      - architecture_overview
+      - module_specification
+      - data_model
+    optional_roles:
+      - domain_taxonomy
+      - implementation_plan
+      - risk_register
+      - decision_log
+      - acceptance_criteria
+      - mvp_scope
+      - ownership_model
+    keywords:
+      - architektura
+      - projekt
+      - koncepcja
+      - komponenty
+      - system
+
+  compliance_procedure:
+    description: "Compliance or regulatory procedure document"
+    required_roles:
+      - document_goal
+      - scope
+      - procedure_steps
+      - responsibilities
+      - evidence_requirements
+    optional_roles:
+      - risk_register
+      - acceptance_criteria
+      - review_cycle
+    keywords:
+      - procedura
+      - zgodność
+      - compliance
+      - kontrola
+      - wymagania

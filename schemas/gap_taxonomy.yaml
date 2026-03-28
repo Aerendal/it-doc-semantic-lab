@@ -1,0 +1,23 @@
+# Gap taxonomy
+# Defines severity levels for missing roles per document class.
+
+severity:
+  critical:
+    description: "Missing role that makes the document operationally incomplete"
+    examples:
+      - missing risk_register in architecture spec
+      - missing decision_log in architecture spec
+      - missing acceptance_criteria in any deliverable spec
+
+  medium:
+    description: "Missing role that reduces usability but document still works"
+    examples:
+      - partial implementation_plan
+      - partial test_strategy
+      - missing ownership_model
+
+  low:
+    description: "Missing role that is nice to have"
+    examples:
+      - missing formal assumptions section
+      - no explicit change policy

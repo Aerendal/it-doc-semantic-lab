@@ -1,0 +1,108 @@
+# Section role contracts
+# Maps canonical roles to heading patterns and content indicators.
+# Used by section role mapper (P2→P3 component).
+
+roles:
+  document_goal:
+    aliases:
+      - "cel dokumentu"
+      - "cel projektu"
+      - "cel"
+      - "purpose"
+      - "overview"
+    content_indicators:
+      - "celem"
+      - "dokument opisuje"
+      - "dokument służy"
+
+  domain_taxonomy:
+    aliases:
+      - "taksonomia"
+      - "warstwy"
+      - "klasyfikacja"
+      - "domain"
+      - "reguły"
+    content_indicators:
+      - "warstwa"
+      - "kategoria"
+      - "typ"
+
+  architecture_overview:
+    aliases:
+      - "architektura"
+      - "sieć algorytmów"
+      - "ogólna architektura"
+      - "architecture"
+    content_indicators:
+      - "komponenty"
+      - "moduły"
+      - "pipeline"
+
+  module_specification:
+    aliases:
+      - "opis modułów"
+      - "moduły"
+      - "specyfikacja modułów"
+      - "modules"
+    content_indicators:
+      - "moduł"
+      - "MOD-"
+      - "wejście"
+      - "wyjście"
+
+  output_contract:
+    aliases:
+      - "format wyjścia"
+      - "wyjście"
+      - "output"
+      - "kontrakt wyjścia"
+    content_indicators:
+      - "format"
+      - "wektor"
+      - "wynik"
+
+  data_model:
+    aliases:
+      - "schemat danych"
+      - "model danych"
+      - "baza danych"
+      - "data model"
+      - "schema"
+    content_indicators:
+      - "tabela"
+      - "kolumna"
+      - "klucz"
+      - "SQLite"
+
+  implementation_plan:
+    aliases:
+      - "plan implementacji"
+      - "dalsze kroki"
+      - "roadmap"
+      - "next steps"
+    content_indicators:
+      - "etap"
+      - "sprint"
+      - "krok"
+      - "TODO"
+
+  risk_register:
+    aliases:
+      - "ryzyka"
+      - "rejestr ryzyk"
+      - "risk register"
+    content_indicators:
+      - "ryzyko"
+      - "zagrożenie"
+      - "mitygacja"
+
+  decision_log:
+    aliases:
+      - "decyzje"
+      - "log decyzji"
+      - "ADR"
+      - "decision log"
+    content_indicators:
+      - "decyzja"
+      - "uzasadnienie"
+      - "alternatywa"

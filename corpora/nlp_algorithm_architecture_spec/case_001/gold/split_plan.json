@@ -1,0 +1,12 @@
+{
+  "target_files": [
+    "docs/domain/morphology_taxonomy.md",
+    "docs/architecture/pipeline_overview.md",
+    "docs/architecture/module_specs.md",
+    "docs/contracts/output_vector.md",
+    "docs/contracts/sqlite_schema.md",
+    "docs/plan/implementation_roadmap.md",
+    "docs/tests/regression_and_benchmark_plan.md",
+    "docs/decisions/adr-001-hybrid-rules-exceptions.md"
+  ]
+}

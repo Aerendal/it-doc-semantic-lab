@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Large binary files — docx, db
+*.docx
+*.db
+*.db-shm
+*.db-wal
+
+# Session artifacts
+reports/session_*/
+*.tar.gz
+*.zip
+
+# Editor
+.DS_Store
+*.swp
+*~
