@@ -413,8 +413,8 @@ The program uses **30 test/control layers**, grouped into 6 levels.
 At minimum, the repository should eventually contain:
 
 - `docs/QUALITY_GATES.md`
-- `docs/TESTING_STANDARD.md`
-- `docs/TEST_CATALOG.md`
+- `docs/TESTING_STANDARD.md` *(normative)* — testing philosophy, 6 levels, mandatory rules, mock/skip/promotion policies
+- `docs/TEST_CATALOG.md` *(operational)* — 30-layer test catalog with blocking gate, mock policy and evidence strength per layer
 - `docs/EVIDENCE_MODEL.md`
 - `docs/EXECUTION_CONTRACT.md`
 - `docs/PLAYBOOKS/`

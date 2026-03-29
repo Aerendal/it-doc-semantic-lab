@@ -17,6 +17,24 @@ This document is part of the execution-assurance program described in `docs/EXEC
 
 ---
 
+## Testing-standard dependency
+
+Gate evaluation depends on the repository testing standard and the test catalog.
+
+**Normative source:**
+- `docs/TESTING_STANDARD.md` — testing philosophy, 6 levels, mandatory rules and conventions
+
+**Operational layer definitions:**
+- `docs/TEST_CATALOG.md` — 30-layer test catalog with per-layer gate mapping, mock policy and evidence strength
+
+A gate may not be reported as credible if the required test layers were not executed, were silently skipped, or produced insufficient evidence.
+
+The exception and mock policies that govern what deviations are permissible are defined in:
+- `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
+- `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
+
+---
+
 ## Principles
 
 1. **Evidence over assertion**  
