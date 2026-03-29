@@ -17,6 +17,20 @@ reports/session_*/
 *.tar.gz
 *.zip
 
+# Go build
+bin/
+
+# SQLite runtime files
+db/semantic_index.sqlite
+db/semantic_index.sqlite-shm
+db/semantic_index.sqlite-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Runtime event log
+runs/events.jsonl
+
 # Editor
 .DS_Store
 *.swp
