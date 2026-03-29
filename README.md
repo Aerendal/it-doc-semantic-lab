@@ -53,6 +53,17 @@ docs/              — development plan and notes
 | exp_003 | Gap report generator | planned |
 | exp_004 | Split planner | planned |
 
+## Documentation
+
+- `docs/ARCHITECTURE.md` — overview of the Go CLI architecture and capability slices
+- `docs/TESTING_STANDARD.md` — 30-layer testing model
+- `docs/EVIDENCE_MODEL.md` — required artifacts per run
+- `docs/QUALITY_GATES.md` — blocking promotion conditions
+- `docs/REFERENCES.md` — authoritative sources for standards, regulations and documentation practices
+- `docs/PLAYBOOKS/` — strategic how-to guides
+- `docs/RUNBOOKS/` — step-by-step operational procedures
+- `docs/ADR/` — architectural decision records
+
 ## Relation to stable repo
 
 This lab → promotes to → IT-Dokumentacja/itdoc/
