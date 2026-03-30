@@ -26,7 +26,15 @@ Manifest uruchomienia jest jedynym autorytatywnym indeksem evidence pack uruchom
   "finished_at": "<string — ISO 8601 datetime>",
   "exit_code": "<integer — 0 | 1 | 2 | 3>",
   "status": "<string — 'completed' | 'failed' | 'aborted'>",
-  "trusted": "<boolean — true if all trusted-run criteria are met>",
+  "trust_level": "<string — 'untrusted_local' | 'trusted_ci' | 'authoritative_verify'>",
+  "context_id": "<string — unique execution context identifier, e.g. 'authoritative-local-20260330T120000Z'>",
+  "context_validation_result": {
+    "status": "<string — 'allowed' | 'rejected'>",
+    "violations": [
+      "<string — description of each violation, empty if allowed>"
+    ]
+  },
+  "seal_status": "<string — 'unsealed' | 'sealed'>",
   "environment": {
     "binary_version": "<string — itdlab version>",
     "go_version": "<string — Go runtime version>",
@@ -47,6 +55,12 @@ Manifest uruchomienia jest jedynym autorytatywnym indeksem evidence pack uruchom
     ],
     "complete": "<boolean — true if all required artifacts are present and non-empty>"
   },
+  "required_artifacts": [
+    "<string — logical name of each artifact required for this command>"
+  ],
+  "required_gates": [
+    "<string — gate ID required for this command, e.g. 'G1', 'G2'>"
+  ],
   "gates": [
     {
       "gate_id": "<string — e.g. 'G1'>",
@@ -96,7 +110,10 @@ Manifest uruchomienia jest jedynym autorytatywnym indeksem evidence pack uruchom
 | `finished_at` | ciąg znaków | tak | Data i czas UTC w formacie ISO 8601 |
 | `exit_code` | liczba całkowita | tak | 0, 1, 2 lub 3 zgodnie z kontraktem kodu wyjścia |
 | `status` | ciąg znaków | tak | `completed`, `failed` lub `aborted` |
-| `trusted` | wartość logiczna | tak | `true` tylko jeśli wszystkie kryteria uruchomienia `trusted` są spełnione |
+| `trust_level` | ciąg znaków | tak | `untrusted_local` \| `trusted_ci` \| `authoritative_verify` — poziom zaufania przebiegu |
+| `context_id` | ciąg znaków | tak | Unikalny identyfikator kontekstu wykonania. Format: `<typ>-<środowisko>-<timestamp>` |
+| `context_validation_result` | obiekt | tak | Wynik walidacji kontekstu: `status` (`allowed`/`rejected`) + lista naruszeń |
+| `seal_status` | ciąg znaków | tak | `unsealed` (domyślny) lub `sealed` (tylko dla `authoritative_verify` po spełnieniu warunków) |
 
 ### Obiekt `evidence`
 
@@ -106,6 +123,15 @@ Manifest uruchomienia jest jedynym autorytatywnym indeksem evidence pack uruchom
 | `event_count` | liczba całkowita | tak | Liczba linii dziennika zdarzeń dołączonych w tym uruchomieniu |
 | `artifacts` | tablica | tak | Jeden wpis na każdy wyprodukowany artefakt |
 | `complete` | wartość logiczna | tak | `true` jeśli wszystkie wymagane artefakty są obecne i niepuste |
+
+### Pola `required_artifacts` i `required_gates`
+
+| Pole | Typ | Wymagane | Opis |
+|------|-----|----------|------|
+| `required_artifacts` | tablica ciągów | tak | Lista logicznych nazw artefaktów wymaganych dla tego polecenia (mandatory + command-specific) |
+| `required_gates` | tablica ciągów | tak | Lista identyfikatorów bramek wymaganych dla tego polecenia, np. `["G1", "G2"]` |
+
+Pola te są wypełniane przez narzędzie na podstawie wykonanego polecenia. Umożliwiają automatyczną weryfikację kompletności bez znajomości polecenia z zewnątrz.
 
 ### Tablica `gates`
 
@@ -126,9 +152,13 @@ Niekrytyczne błędy napotkane podczas uruchomienia. Uruchomienie może zakończ
 1. `run_id` musi odpowiadać wierszowi w tabeli SQLite `runs` z tym samym `run_id`.
 2. `db_checksum` musi odpowiadać rzeczywistej wartości SHA-256 pliku bazy danych w momencie zapisania manifestu.
 3. `evidence.complete` musi być `false`, jeśli jakikolwiek artefakt w tablicy `artifacts` ma `size_bytes = 0`.
-4. `trusted` musi być `false`, jeśli `evidence.complete = false`.
-5. `trusted` musi być `false`, jeśli jakiekolwiek pominięcie w `skips` ma `category = 3` lub `category = 4`.
-6. Status bramki `PASS` wymaga `evidence.complete = true`.
+4. `trust_level` musi być `untrusted_local`, jeśli `evidence.complete = false`.
+5. `trust_level` musi być `untrusted_local`, jeśli jakiekolwiek pominięcie w `skips` ma `category = 3` lub `category = 4`.
+6. `trust_level` musi być `untrusted_local`, jeśli `context_validation_result.status = 'rejected'`.
+7. Status bramki `PASS` wymaga `evidence.complete = true`.
+8. `seal_status = 'sealed'` jest dozwolone wyłącznie gdy `trust_level = 'authoritative_verify'` i `evidence.complete = true` i wszystkie wymagane bramki mają status `PASS`.
+9. Tablica `required_artifacts` musi zawierać wszystkie mandatory artifacts plus command-specific artifacts dla danego polecenia.
+10. Tablica `required_gates` musi zawierać przynajmniej G1 dla każdego polecenia zmieniającego stan.
 
 ---
 
@@ -149,6 +179,10 @@ Jest też odwoływany przez `itdlab audit evidence <run_id>` do weryfikacji komp
 - `docs/EVIDENCE_MODEL.md`
 - `docs/CONTEXT_VOCABULARY.md`
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
+
+## Punkty odniesienia autorytetu
+- `docs/REFERENCES.md` — RFC 2119 (semantyka MUST / SHOULD)
+- `docs/REFERENCES.md` — NIST SP 800-53 (koncepcja rekordu dowodowego i kontroli)
 
 ## Metadane przeglądu
 - Właściciel: zespół projektowy

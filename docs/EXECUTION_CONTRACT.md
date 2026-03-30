@@ -86,6 +86,134 @@ Kody wyjścia są częścią kontraktu CLI. Każdy kod produkujący inny kod wyj
 
 ---
 
+## Walidacja kontekstu wykonania
+
+Przed pierwszym zapisem stanu narzędzie waliduje kontekst wykonania. Walidacja kontekstu jest odrębna od warunków wstępnych (P1–P6) — sprawdza *jakość* środowiska, nie tylko jego dostępność.
+
+### Wymagane pola kontekstu
+
+| Pole | Opis | Wartości |
+|------|------|---------|
+| `context_id` | Unikalny identyfikator kontekstu dla tego przebiegu | Format: `<typ>-<środowisko>-<timestamp>` |
+| `context_type` | Klasyfikacja kontekstu | `untrusted_local` \| `trusted_ci` \| `authoritative_verify` |
+| `db_mode` | Tryb połączenia SQLite | Musi być `file` — tryb `memory` jest odrzucany |
+| `schema_version` | Wersja schematu bazy danych | Musi być ≥ 1 |
+| `active_skips` | Lista aktywnych pomijań z `SKIP_REGISTER.md` | Sprawdź, czy brak Kategorii 4 lub przeterminowanych |
+
+### Reguły walidacji
+
+1. Jeśli `db_mode = memory`, kontekst jest **odrzucony**. Przebieg kończy się kodem 1.
+2. Jeśli jakiekolwiek aktywne pominięcie jest Kategorii 4 lub przeterminowane, kontekst jest **odrzucony** dla tego polecenia.
+3. Jeśli `context_type = authoritative_verify` i jakikolwiek layer `mock-forbidden` ma aktywny mock — kontekst jest **odrzucony**.
+4. Wynik walidacji (`allowed` | `rejected`) i przyczyny są zapisywane w `run_manifest.json` jako `context_validation_result`.
+
+---
+
+## Maszyna stanów przebiegu
+
+Każdy przebieg przechodzi przez zdefiniowaną sekwencję stanów. Przejścia do przodu są jedyne legalne.
+
+### Stany
+
+| Stan | Opis |
+|------|------|
+| `created` | Przebieg zainicjowany; `run_id` wygenerowany; rekord w SQLite utworzony |
+| `context_validated` | Walidacja kontekstu zakończona wynikiem `allowed` |
+| `running` | Operacje zmieniające stan w toku |
+| `completed` | Wszystkie warunki końcowe spełnione; exit code 0 lub 2 |
+| `failed` | Co najmniej jeden warunek końcowy niespełniony; exit code 1 |
+| `aborted` | Niezmiennik naruszony; przebieg zatrzymany awaryjnie; exit code 3 |
+| `sealed` | Manifest i artefakty zapieczętowane; nie można modyfikować |
+| `promoted` | Przebieg użyty jako podstawa promocji do stabilnego repozytorium |
+
+### Legalne przejścia
+
+```
+created → context_validated
+created → failed          (walidacja kontekstu odrzucona)
+context_validated → running
+running → completed
+running → failed
+running → aborted
+completed → sealed        (wyłącznie dla authoritative_verify)
+sealed → promoted
+```
+
+### Nielegalne przejścia
+
+Każde przejście niespełnione na powyższej liście jest nielegalne. W szczególności:
+- `completed → running` — NIEDOZWOLONE (przebieg nie może być wznowiony)
+- `aborted → running` — NIEDOZWOLONE (aborted jest stanem terminalnym)
+- `failed → completed` — NIEDOZWOLONE
+- `sealed → completed` / `sealed → running` — NIEDOZWOLONE
+
+Próba nielegalnego przejścia musi skutkować naruszeniem kontraktu (exit code 3).
+
+---
+
+## Reguły zapieczętowania
+
+Zapieczętowanie (`sealed`) jest opsjonalne i dotyczy wyłącznie przebiegów `authoritative_verify`.
+
+### Warunki zapieczętowania
+
+1. Przebieg jest w stanie `completed` z exit code 0.
+2. `evidence.complete = true` w manifeście.
+3. `context_type = authoritative_verify`.
+4. Brak aktywnych pomijań Kategorii 3 lub 4.
+5. Wszystkie wymagane bramki mają status `PASS`.
+
+### Skutki zapieczętowania
+
+- Plik `run_manifest.json` jest oznaczany `seal_status: sealed`.
+- Suma kontrolna manifestu jest zapisywana w `reports/<run_id>/manifest_checksum.txt`.
+- Artefakty w `reports/<run_id>/` nie mogą być nadpisywane po zapieczętowaniu.
+- SQLite rejestruje `sealed_at` w rekordzie przebiegu.
+
+Zapieczętowanie jest prererekwizytem dla `promotion-eligible run`.
+
+---
+
+## Przebieg autorytatywny a nieautorytatywny
+
+### Przebieg nieautorytatywny (`untrusted_local` lub `trusted_ci`)
+
+- Może być używany do exploracji, debugowania, weryfikacji CI.
+- Może być cytowany jako dowód dla bramek G1–G3, jeśli `trust_level = trusted_ci` i `evidence.complete = true`.
+- **Nie może** być podstawą decyzji promocji do stabilnego repozytorium.
+- **Nie może** być zapieczętowany.
+
+### Przebieg autorytatywny (`authoritative_verify`)
+
+- Wykonany celowo, z pełną izolacją środowiska, rzeczywistymi danymi wejściowymi.
+- Może być cytowany jako dowód dla bramek G1–G5.
+- Może być zapieczętowany.
+- Jest prererekwizytem `promotion-eligible run`.
+- Wymaga explicitnej deklaracji `context_type = authoritative_verify` przy wywołaniu CLI.
+
+### Konsekwencje błędnej klasyfikacji
+
+Deklaracja `authoritative_verify` dla przebiegu, który nie spełnia wymagań tego kontekstu (np. aktywny mock-forbidden z mockiem), jest naruszeniem kontraktu i skutkuje rejection kontekstu + exit code 1. Nie jest silent downgrade do `untrusted_local`.
+
+---
+
+## Warunki wstępne promocji
+
+Przed wykonaniem `itdlab export repo1` (promocja do stabilnego repozytorium) muszą być spełnione wszystkie poniższe warunki:
+
+| # | Warunek | Weryfikacja |
+|---|---------|-------------|
+| PR1 | Co najmniej jeden `promotion-eligible run` istnieje dla każdego wycinka funkcjonalnego | `itdlab audit runs --promotion-eligible` |
+| PR2 | Wszystkie bramki G1–G5 mają status `PASS` | Raport bramek |
+| PR3 | Brak aktywnych pomijań Kategorii 3 lub 4 na ścieżkach krytycznych | `docs/SKIP_REGISTER.md` |
+| PR4 | Każdy `promotion-eligible run` ma `seal_status: sealed` | Manifest przebiegu |
+| PR5 | Żaden z cytowanych przebiegów nie ma `context_validation_result: rejected` | Manifest przebiegu |
+| PR6 | `itdlab export repo1 --dry-run` kończy się z exit code 0 | Weryfikacja przed produkcją |
+
+Niespełnienie któregokolwiek z PR1–PR6 musi blokować wykonanie `itdlab export repo1` z exit code 2 (gate failure).
+
+---
+
 ## Zakres
 
 Ten kontrakt ma zastosowanie do:
@@ -107,9 +235,11 @@ Polecenia tylko do odczytu nadal muszą zapisywać na stdout, lecz nie są zobow
 - `docs/TESTING_STANDARD.md`
 - `docs/EVIDENCE_MODEL.md`
 - `docs/CONTEXT_VOCABULARY.md`
+- `docs/RUN_MANIFEST_SCHEMA.md`
 
 ## Punkty odniesienia autorytetu
 - `docs/REFERENCES.md` — RFC 2119 (semantyka MUST / SHOULD)
+- `docs/REFERENCES.md` — ISO/IEC/IEEE 29148 (kontrakt wymagań i warunki postcondition)
 
 ## Review metadata
 - Owner: project team

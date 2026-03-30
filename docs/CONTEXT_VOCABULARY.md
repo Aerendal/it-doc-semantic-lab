@@ -128,6 +128,56 @@ Funkcja, która przechodzi zestaw testów lokalnie lub w CI, lecz jeszcze nie sp
 
 ---
 
+## Pojęcia kontekstu wykonania
+
+### Context / Execution context
+Zbiór warunków środowiskowych i deklaracji operatora, które określają, w jakim trybie wykonywany jest przebieg. Kontekst jest walidowany przed pierwszym zapisem stanu. Przebieg, którego kontekst nie przeszedł walidacji, jest przebiegiem **odrzuconym** (`REJECTED`).
+
+### context_id
+Unikalny identyfikator kontekstu wykonania przebiegu. Zakodowany w manifeście uruchomienia i w rekordzie przebiegu w SQLite. Umożliwia późniejszą ocenę: „czy ten przebieg był wykonany w dozwolonym kontekście?". Format: `<typ>-<środowisko>-<timestamp>`, np. `authoritative-local-20260330`.
+
+### run_context
+Konkretna instancja kontekstu wykonania dla przebiegu. Obejmuje: `context_id`, typ kontekstu (`untrusted_local` | `trusted_ci` | `authoritative_verify`), wynik walidacji oraz ewentualne naruszenia.
+
+### Allowed context
+Kontekst, który przeszedł walidację i spełnia minimalne wymagania dla danego polecenia. Tylko przebieg w `allowed context` może produkować artefakty kwalifikujące się jako dowód bramki.
+
+### Rejected context
+Kontekst, który nie przeszedł walidacji — brakuje wymaganych warunków (np. baza danych w trybie in-memory, brak wymaganej wersji schematu, aktywny `mock-forbidden` naruszony). Przebieg w `rejected context` musi zakończyć się z kodem 1. Pole `context_validation_result` w manifeście zawiera przyczyny odrzucenia.
+
+### Authoritative run
+Przebieg wykonany w kontekście `authoritative_verify` — celowo, przez operatora, z pełną izolacją, rzeczywistymi danymi wejściowymi, bez aktywnych pomijań Kategorii 3/4 oraz z kompletnym pakietem dowodowym. Jest to najwyższy poziom zaufania. Może być cytowany w raporcie bramki G5 i decyzji o promocji.
+
+### Sealed run
+Przebieg, który zakończył się pomyślnie, a jego manifest i artefakty zostały zablokowane (oznaczone jako `seal_status: sealed`). Zapieczętowanego przebiegu nie można zmodyfikować ani zaktualizować. Jest to prererekwizyt dla `promotion-eligible run`.
+
+### Promotion-eligible run
+Przebieg spełniający wszystkie poniższe warunki:
+- `trust_level: authoritative_verify`,
+- `evidence.complete = true`,
+- `seal_status: sealed`,
+- wszystkie wymagane bramki w statusie `PASS`,
+- brak aktywnych pomijań Kategorii 3 lub 4 na warstwach ścieżki krytycznej.
+
+Tylko `promotion-eligible run` może być cytowany jako podstawa decyzji promocji do stabilnego repozytorium.
+
+### REJECTED
+Status przebiegu lub kontekstu wskazujący, że walidacja wstępna nie powiodła się. Przebieg `REJECTED` nie zapisuje stanu (poza zapisem odmowy na stderr), nie tworzy pakietu dowodowego i nie może być cytowany.
+
+### degraded
+Status bramki lub przebiegu wskazujący, że warunki są częściowo spełnione: co najmniej jedno aktywne pomijanie Kategorii 3 lub warstwa `mock-restricted` bez weryfikacji ścieżką rzeczywistą. Bramka `degraded` blokuje promocję, lecz nie blokuje dalszego wytwarzania.
+
+### Mandatory artifact
+Artefakt wymagany dla każdego przebiegu zmieniającego stan, niezależnie od polecenia: `stdout.txt`, `db_checksum.txt`, `summary.md`, `run_manifest.json`. Zdefiniowane w `docs/EVIDENCE_MODEL.md`. Brak któregokolwiek z mandatory artifacts czyni przebieg INCOMPLETE.
+
+### Command-specific artifact
+Artefakt wymagany tylko dla określonego polecenia CLI (np. `parse_report.json` dla `itdlab ingest run`, `collision_report.md` dla `itdlab normalize apply`). Lista per polecenie w `docs/EVIDENCE_MODEL.md`. Brak command-specific artifact czyni przebieg INCOMPLETE dla danego polecenia.
+
+### Blocking gate
+Bramka jakości, której wynik `FAIL` bezpośrednio blokuje dalsze operacje lub promocję. Każda warstwa testowa ma przypisaną blokującą bramkę w `docs/TEST_CATALOG.md` (pole Blocking gate). Przebieg nie może przejść do kolejnego etapu, jeśli jego blokująca bramka jest w statusie `FAIL`.
+
+---
+
 ## Terminy statusu dokumentu
 
 ### draft
@@ -148,6 +198,11 @@ Dokument został przejrzany i zaakceptowany; normatywny dla tego repozytorium.
 - `docs/EVIDENCE_MODEL.md`
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
 - `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
+- `docs/EXECUTION_CONTRACT.md`
+
+## Punkty odniesienia autorytetu
+- `docs/REFERENCES.md` — RFC 2119 (semantyka MUST / SHOULD)
+- `docs/REFERENCES.md` — ISO/IEC/IEEE 29148 (kontrakt wymagań)
 
 ## Review metadata
 - Owner: project team
