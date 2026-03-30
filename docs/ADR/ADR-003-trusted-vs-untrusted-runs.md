@@ -12,64 +12,140 @@
 
 ## Kontekst
 
-Nie wszystkie uruchomienia są równoważne. Uruchomienie wykonane w środowisku deweloperskim z zamockowanymi zależnościami, pominiętymi warstwami lub niekompletnym pakietem dowodów nie powinno być traktowane tak samo jak uruchomienie wykonane w czystym środowisku z prawdziwymi danymi wejściowymi i pełnymi dowodami. Traktowanie wszystkich zielonych uruchomień jako równoważnych stwarza fałszywe poczucie jakości.
+Nie wszystkie uruchomienia są równoważne. Uruchomienie wykonane lokalnie, z zamockowanymi zależnościami, pominiętymi warstwami lub niekompletnym pakietem dowodów, nie powinno być traktowane tak samo jak uruchomienie wykonane w kontrolowanym kontekście z pełnym pakietem dowodów i real-path verification.
 
-Problem nie leży w tym, że niekompletne uruchomienia są błędne — często są użyteczne podczas dewelopmentu. Problem pojawia się wtedy, gdy niekompletne uruchomienie jest *cytowane* jako dowód bramkowy lub *używane* jako podstawa decyzji o promocji.
+Problem nie polega na tym, że uruchomienia nieautorytatywne są bezużyteczne. Są one przydatne podczas developmentu, debugowania i szybkiej informacji zwrotnej. Problem pojawia się wtedy, gdy takie uruchomienie jest *cytowane* jako dowód bramkowy lub *używane* jako podstawa decyzji promocyjnej.
 
-System potrzebuje formalnego rozróżnienia między uruchomieniami, które mogą być cytowane, a tymi, które nie mogą.
+Repozytorium potrzebuje formalnego i maszynowo czytelnego rozróżnienia poziomów zaufania uruchomień.
 
 ---
 
 ## Decyzja
 
-Każde uruchomienie jest klasyfikowane jako **trusted** lub **untrusted** w momencie zapisywania manifestu uruchomienia.
+Każde uruchomienie jest klasyfikowane w manifeście przy użyciu pola **`trust_level`**, a nie prostego booleanu `trusted`.
 
-### Uruchomienie jest trusted wtedy i tylko wtedy, gdy:
+Dozwolone wartości kontraktowe:
+- `untrusted_local`
+- `trusted_ci`
+- `authoritative_verify`
 
-1. Wszystkie warunki wstępne w `docs/EXECUTION_CONTRACT.md` zostały spełnione.
-2. Wszystkie warunki końcowe w `docs/EXECUTION_CONTRACT.md` zostały zaspokojone (`exit_code = 0` lub `exit_code = 2`).
-3. `evidence.complete = true` w `run_manifest.json`.
-4. Żadna warstwa `mock-forbidden` nie została wykonana z mockami.
-5. Żaden skip Kategorii 3 ani Kategorii 4 nie był aktywny (zgodnie z `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`).
-6. Środowiskiem nie była lokalna maszyna deweloperska z nadpisanymi ścieżkami DB lub logu, które omijają standardową izolację (konkretnie: `--db` i `--log` muszą wskazywać na standardowe ścieżki lub jawnie zadeklarowane alternatywne ścieżki z udokumentowanym uzasadnieniem).
+### Znaczenie poziomów
 
-Jeśli którykolwiek z tych warunków jest fałszywy, w manifeście uruchomienia ustawiane jest `trusted = false`. Uruchomienie jest rejestrowane i dostępne do inspekcji, ale nie może być cytowane jako dowód do oceny bramkowej ani promocji.
+#### `untrusted_local`
+Uruchomienie lokalne lub eksploracyjne, które:
+- może być użyteczne dla developmentu,
+- może generować artefakty robocze,
+- ale nie stanowi autorytatywnego dowodu dla promocji,
+- i nie może zostać zapieczętowane.
 
-### Konsekwencje klasyfikacji untrusted
+#### `trusted_ci`
+Uruchomienie wykonane w kontrolowanym pipeline CI lub innym zaufanym kontekście pośrednim, które:
+- może być cytowane jako dowód dla części bramek,
+- może wspierać G1–G3, gdy `evidence.complete = true`,
+- ale nie może samo w sobie stanowić podstawy promocji do repozytorium stabilnego,
+- i nie może być promotion-eligible.
 
-- Uruchomienie nie może być przywołane w raporcie bramkowym jako cytowanie PASS.
-- Uruchomienie nie może pojawić się na liście kontrolnej gotowości do promocji jako zakończony element.
-- `itdlab audit evidence <run_id>` zgłosi uruchomienie jako untrusted.
-- Wyniki testów uruchomienia mogą być nadal używane nieformalnie jako informacja zwrotna podczas dewelopmentu, ale nie wolno mylić tego z dowodem bramkowym.
+#### `authoritative_verify`
+Uruchomienie wykonane w kontekście autorytatywnej weryfikacji, które:
+- spełnia wymagania kontekstu autorytatywnego,
+- używa real-path verification tam, gdzie wymagane,
+- ma kompletny pakiet dowodowy,
+- może wspierać ocenę G1–G5,
+- może zostać zapieczętowane,
+- i może stać się `promotion-eligible`, jeśli spełni pozostałe warunki kontraktowe.
+
+### Pochodne klasyfikacje
+
+Na potrzeby raportowania dopuszczalne jest używanie pojęć zbiorczych:
+- **trusted run** — uruchomienie, którego `trust_level` jest `trusted_ci` albo `authoritative_verify`, przy czym dowody są kompletne i nie ma naruszeń polityki mocków/skipów,
+- **untrusted run** — uruchomienie o `trust_level = untrusted_local` albo takie, którego poziom zaufania został zdegradowany przez brak dowodów lub naruszenie kontraktu.
+
+Pole `trusted: boolean` nie jest już kontraktem źródłowym manifestu. Jeżeli pojawia się w warstwie raportowania pomocniczej, musi być traktowane jako pochodna od `trust_level` i evidence completeness, a nie jako źródło prawdy.
+
+---
+
+## Reguły klasyfikacji
+
+### `untrusted_local`
+Powinno zostać ustawione, jeśli zachodzi którykolwiek z poniższych warunków:
+- `evidence.complete = false`,
+- `context_validation_result.status = rejected`,
+- aktywne jest pominięcie Kategorii 3 lub 4 na warstwie istotnej dla przebiegu,
+- warstwa `mock-forbidden` została wykonana z mockami,
+- przebieg działa poza dozwolonym kontekstem wykonania,
+- uruchomienie jest jawnie eksploracyjne lub debugowe.
+
+### `trusted_ci`
+Może zostać ustawione tylko wtedy, gdy:
+- kontekst wykonania jest dozwolony,
+- pakiet dowodowy jest kompletny,
+- przebieg nie narusza polityki `mock-forbidden`,
+- nie ma aktywnych pomijań blokujących wiarygodność dla danej bramki,
+- przebieg nie rości sobie prawa do promocji.
+
+### `authoritative_verify`
+Może zostać ustawione tylko wtedy, gdy:
+- kontekst autorytatywny przeszedł walidację,
+- przebieg działa na file-backed SQLite i rzeczywistym logu zdarzeń,
+- evidence pack jest kompletny,
+- wymagane bramki zostały policzone,
+- brak aktywnych pomijań Kategorii 3 lub 4,
+- brak naruszeń warstw `mock-forbidden`,
+- przebieg jest wykonywany jako jawna, kontrolowana weryfikacja.
+
+---
+
+## Konsekwencje poziomu zaufania
+
+### Dla `untrusted_local`
+- nie może być podstawą promotion decision,
+- nie może zostać oznaczone jako `seal_status: sealed`,
+- nie może być cytowane jako authoritative evidence,
+- może być zachowane dla debugowania i analizy rozwojowej.
+
+### Dla `trusted_ci`
+- może wspierać ocenę wybranych bramek technicznych,
+- może być cytowane w raportach jakościowych jako dowód pośredni,
+- nie może samodzielnie odblokować promocji,
+- nie może być promotion-eligible.
+
+### Dla `authoritative_verify`
+- może wspierać ocenę wszystkich wymaganych bramek,
+- może zostać zapieczętowane,
+- może być promotion-eligible po spełnieniu wszystkich warunków kontraktowych,
+- stanowi najwyższy poziom zaufania przewidziany dla tego repozytorium.
 
 ---
 
 ## Rozważane alternatywy
 
-### 1. Wszystkie uruchomienia są równoważne; zaufanie jest deklarowane zewnętrznie
+### Alternatywa A — wszystkie uruchomienia są równoważne
 
-**Podejście:** Nie klasyfikuj uruchomień; pozwól operatorowi zadeklarować, którym ufa.
+**Odrzucona.**
 
-**Odrzucono, ponieważ:**
-- Usuwa to obiektywną egzekwowalność. Operator pod presją zadeklaruje uruchomienia untrusted jako trusted.
-- Klasyfikacja musi być deterministyczna i obliczana przez narzędzie, a nie deklarowana przez operatora.
+Powody:
+- usuwa egzekwowalność,
+- pozwala operatorowi deklarować zaufanie arbitralnie,
+- miesza development feedback z dowodem bramkowym.
 
-### 2. Zaufanie jest binarne: tylko PASS/FAIL
+### Alternatywa B — prosty boolean `trusted`
 
-**Podejście:** Uruchomienie kończące się kodem 0 jest trusted; każdy inny kod — nie.
+**Odrzucona jako kontrakt źródłowy.**
 
-**Odrzucono, ponieważ:**
-- Pozwala to na klasyfikację uruchomień z niekompletnymi pakietami dowodów i aktywnymi naruszeniami mock-forbidden jako trusted, o ile uruchomienie kończy się kodem 0.
-- Zielony kod wyjścia jest warunkiem koniecznym, ale niewystarczającym dla zaufania.
+Powody:
+- gubi semantykę poziomów pośrednich,
+- nie rozróżnia CI od autorytatywnej weryfikacji,
+- utrudnia powiązanie z promotion rules i sealing,
+- jest zbyt uboga względem obecnego modelu manifestu i execution context.
 
-### 3. Osobna flaga „trybu audytu"
+### Alternatywa C — ręczna flaga operatora `--trusted`
 
-**Podejście:** Dodaj flagę `--trusted` włączającą ściślejsze sprawdzanie.
+**Odrzucona.**
 
-**Odrzucono, ponieważ:**
-- Tworzy to dwutorowy system, w którym większość uruchomień nigdy nie jest audytowana.
-- Deweloperzy nie będą używać `--trusted` podczas normalnego dewelopmentu; nie zapewnia to ochrony przed przypadkowym nadużyciem.
-- Klasyfikacja zaufania powinna być automatyczna, a nie opcjonalna.
+Powody:
+- przenosi zaufanie z modelu egzekwowanego przez narzędzie na deklarację człowieka,
+- zwiększa ryzyko nadużycia lub pomyłki,
+- osłabia mechaniczne rozróżnienie oficjalnych i nieoficjalnych przebiegów.
 
 ---
 
@@ -77,42 +153,60 @@ Jeśli którykolwiek z tych warunków jest fałszywy, w manifeście uruchomienia
 
 ### Pozytywne
 
-- Raporty dowodów bramkowych mogą wyraźnie odróżniać uruchomienia trusted od untrusted.
-- Decyzje o promocji mają jasną, obiektywną podstawę: co najmniej jedno uruchomienie trusted na bramkę.
-- Przepływ pracy dewelopmentu nie jest blokowany — uruchomienia untrusted są nadal szybkie, użyteczne i rejestrowane.
-- Klasyfikacja jest obliczana deterministycznie; brak niejednoznaczności co do statusu uruchomienia.
+- manifest uruchomienia staje się bardziej precyzyjny semantycznie,
+- raporty mogą rozróżniać rodzaj zaufania, nie tylko jego obecność/nieobecność,
+- decyzje promocyjne mają jednoznaczny fundament kontraktowy,
+- lokalne uruchomienia pozostają użyteczne, ale nie są mylone z dowodem oficjalnym.
 
 ### Negatywne / zaakceptowane kompromisy
 
-- Pewne fałszywe pozytywy: uruchomienie na maszynie deweloperskiej z pełnymi dowodami, ale niestandardowymi ścieżkami, zostanie sklasyfikowane jako untrusted. Deweloper może to obejść, podając standardowe ścieżki.
-- Rozróżnienie trusted/untrusted wprowadza krok klasyfikacji w raporcie audytowym, który musi być utrzymywany wraz z dodawaniem nowych warunków.
+- wzrasta liczba warunków klasyfikacyjnych,
+- raportowanie staje się nieco bardziej złożone,
+- konieczne jest utrzymanie spójności między manifestem, execution contract i policy documents.
 
 ### Odroczone
 
-- Profile zaufania per-organizacja (np. CI zawsze trusted niezależnie od ścieżki) są odroczone.
-- Kryptograficzne podpisywanie manifestów uruchomień trusted jest odroczone.
+- kryptograficzne podpisywanie authoritative manifests,
+- bardziej rozbudowane profile zaufania per środowisko lub organizacja,
+- dodatkowe poziomy zaufania, jeśli repozytorium istotnie zwiększy złożoność wykonawczą.
 
 ---
 
-## Uwagi implementacyjne
+## Implikacje implementacyjne
 
-- Pole `trusted` jest obliczane i zapisywane do `run_manifest.json` przez logikę finalizacji uruchomienia.
-- `itdlab audit runs` wyświetla status zaufania dla każdego uruchomienia.
-- `itdlab audit evidence <run_id>` weryfikuje wszystkie warunki i raportuje, które zawiodły, jeśli `trusted = false`.
-- Implementacja Go: logika klasyfikacji zaufania powinna znajdować się w `internal/app/audit/trust.go`.
+1. `trust_level` musi być polem obowiązkowym manifestu.
+2. Klasyfikacja poziomu zaufania musi być liczona przez narzędzie, nie deklarowana ręcznie przez operatora.
+3. `seal_status = sealed` jest dozwolone tylko dla `authoritative_verify`.
+4. Promotion guard musi odmawiać promocji dla uruchomień innych niż `authoritative_verify`.
+5. Warstwa raportowania może wyprowadzać pomocniczy boolean `trusted`, ale tylko jako pochodną od `trust_level` i kompletności dowodów.
 
 ---
 
-## Odwołania wewnętrzne
+## Review triggers
+
+ADR powinien zostać zrewidowany, jeśli:
+- model manifestu zmieni kontrakt `trust_level`,
+- pojawią się nowe oficjalne konteksty wykonania,
+- promotion rules zaczną wymagać dodatkowych klas zaufania,
+- podpisy kryptograficzne lub zewnętrzny verifier staną się częścią execution contract.
+
+---
+
+## Internal references
 - `docs/EXECUTION_CONTRACT.md`
 - `docs/EVIDENCE_MODEL.md`
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
 - `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
 - `docs/CONTEXT_VOCABULARY.md`
+- `docs/RUN_MANIFEST_SCHEMA.md`
 - `docs/ADR/ADR-001-sqlite-as-source-of-truth.md`
 - `docs/ADR/ADR-002-event-log-as-audit-backbone.md`
 
-## Metadane przeglądu
-- Owner: zespół projektowy
-- Status: zaakceptowany
+## Authority anchors
+- `docs/REFERENCES.md` — verification, validation and testing references
+- `docs/REFERENCES.md` — requirements engineering and standards language references
+
+## Review metadata
+- Owner: experimental-repository maintainer
+- Status: accepted
 - Last reviewed: 2026-03-30

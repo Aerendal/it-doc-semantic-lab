@@ -13,25 +13,28 @@
 ## Kontekst
 
 System przetwarza dokumenty, wnioskuje relacje i normalizuje nazwy w trakcie kolejnych uruchomień. Każde uruchomienie modyfikuje stan SQLite. Bez niezależnego zapisu tego, co się stało, kiedy i w jakiej kolejności, nie ma możliwości:
-- odtworzenia historii, w jaki sposób dokument osiągnął swój bieżący stan,
+- odtworzenia historii prowadzącej do bieżącego stanu,
 - porównania dwóch uruchomień w celu wykrycia regresji,
 - audytu uruchomienia po fakcie bez jego ponownego wykonania,
-- wykrycia, czy stan SQLite został zmodyfikowany poza zarządzanym uruchomieniem.
+- wykrycia, czy stan SQLite został zmodyfikowany poza zarządzanym uruchomieniem,
+- przeprowadzenia przeglądu po naruszeniu kontraktu lub po awarii częściowej.
 
-SQLite jest źródłem prawdy dla bieżącego stanu, ale natywnie nie śledzi stanu historycznego ani proweniencji między uruchomieniami. Coś innego musi pełnić rolę szkieletu audytu.
+SQLite jest źródłem prawdy dla stanu bieżącego, ale nie jest sam w sobie wystarczającym nośnikiem proweniencji między uruchomieniami. Potrzebna jest osobna, append-only warstwa audytowa.
 
 ---
 
 ## Decyzja
 
-Każda operacja zmieniająca stan w `itdlab` dołącza ustrukturyzowane zdarzenie JSON do append-only pliku logu zdarzeń (`runs/events.jsonl`). Log zdarzeń jest:
+Każda operacja zmieniająca stan w `itdlab` dołącza ustrukturyzowane zdarzenie JSON do append-only pliku logu zdarzeń `runs/events.jsonl`.
 
-1. **Append-only** — istniejące linie nigdy nie są modyfikowane ani usuwane.
-2. **Ustrukturyzowany** — każda linia to prawidłowy obiekt JSON z obowiązkowymi polami.
-3. **Powiązany z uruchomieniem** — każde zdarzenie niesie `run_id` wiążący je z konkretnym wywołaniem.
-4. **Niezależny od SQLite** — log jest zapisywany do osobnego pliku; nie zależy od transakcji SQLite.
+Log zdarzeń jest:
+1. **append-only** — istniejące linie nigdy nie są modyfikowane ani usuwane,
+2. **ustrukturyzowany** — każda linia jest prawidłowym obiektem JSON,
+3. **powiązany z uruchomieniem** — każde zdarzenie niesie `run_id`,
+4. **niezależny od SQLite** — log nie jest utrzymywany wewnątrz pliku bazy danych,
+5. **obowiązkowy dla state-changing runs** — brak logu oznacza brak pełnego evidence model.
 
-### Obowiązkowe pola zdarzeń
+### Obowiązkowe pola zdarzenia
 
 ```json
 {
@@ -46,39 +49,50 @@ Każda operacja zmieniająca stan w `itdlab` dołącza ustrukturyzowane zdarzeni
 }
 ```
 
-Dodatkowe pola są dozwolone. Obowiązkowy zestaw musi być zawsze obecny.
+Dodatkowe pola są dozwolone, lecz zestaw podstawowy jest obowiązkowy dla wszystkich zdarzeń należących do kontraktu audytowego.
 
 ---
 
 ## Rozważane alternatywy
 
-### 1. Tylko SQLite — tabele historii
+### Alternatywa A — Tylko SQLite z tabelami historii
 
-**Podejście:** Dodaj tabele cieni `_history` przechwytujące poprzednie wartości przy UPDATE/DELETE.
+**Odrzucona.**
 
-**Odrzucono, ponieważ:**
-- Wyzwalacze w SQLite są kruche i trudne do testowania.
-- Tabele historii w tym samym pliku co bieżący stan tworzą pojedynczy punkt awarii.
-- Odczyt historii uruchomień wymaga złączeń SQL przez wiele tabel; płaski log jest łatwiejszy do strumieniowania i przeszukiwania.
-- Tabele historii nie przetrwają, jeśli baza danych zostanie odbudowana od podstaw.
+Powody:
+- wyzwalacze i shadow tables komplikują projekt i testowanie,
+- historia w tym samym pliku co stan bieżący tworzy jeden punkt awarii,
+- inspekcja sekwencji zdarzeń jest trudniejsza niż w płaskim logu,
+- odbudowa historii po uszkodzeniu bazy jest trudniejsza.
 
-### 2. Write-ahead log (WAL) jako zapis audytowy
+### Alternatywa B — WAL SQLite jako zapis audytowy
 
-**Podejście:** Użyj pliku WAL SQLite jako zapisu zdarzeń.
+**Odrzucona.**
 
-**Odrzucono, ponieważ:**
-- Pliki WAL są checkpointowane i nadpisywane; nie stanowią trwałego śladu audytowego.
-- Format WAL jest binarny; nie jest czytelny dla człowieka bez narzędzi.
-- WAL jest specyficzny dla implementacji i nie jest częścią publicznego API.
+Powody:
+- WAL nie jest trwałym, docelowym śladem audytowym,
+- jest binarny i trudny do ręcznej inspekcji,
+- checkpointing nadpisuje jego znaczenie jako długoterminowego audytu,
+- jest artefaktem implementacyjnym, nie kontraktem repozytorium.
 
-### 3. Wyłącznie logowanie strukturalne (stdout)
+### Alternatywa C — Wyłącznie ustrukturyzowany stdout
 
-**Podejście:** Emituj ustrukturyzowane linie logu na stdout; przekieruj do pliku przez wywołującego.
+**Odrzucona.**
 
-**Odrzucono, ponieważ:**
-- Przechwytywanie stdout zależy od wywołania powłoki; może zostać utracone.
-- Stdout miesza wyjście diagnostyczne ze zdarzeniami audytowymi; filtrowanie jest kruche.
-- Stdout nie jest z założenia append-only; może zostać obcięty.
+Powody:
+- zależy od tego, czy operator przechwycił wyjście,
+- miesza diagnostykę z audytem,
+- nie daje gwarancji append-only,
+- łatwo go utracić lub nadpisać.
+
+### Alternatywa D — Zewnętrzny system logowania
+
+**Odrzucona na start.**
+
+Powody:
+- łamie local-first discipline,
+- zwiększa zależności środowiskowe,
+- komplikuje odtwarzalne uruchomienia eksperymentalne.
 
 ---
 
@@ -86,42 +100,60 @@ Dodatkowe pola są dozwolone. Obowiązkowy zestaw musi być zawsze obecny.
 
 ### Pozytywne
 
-- Kompletna historia wszystkich zmian stanu jest dostępna dla każdego uruchomienia, w tym uruchomień zakończonych niepowodzeniem lub przerwanych.
-- Uruchomienie można odtworzyć z logu zdarzeń bez dostępu do bieżącego stanu SQLite.
-- Dwa uruchomienia można porównać, zestawiając ich wycinki logu zdarzeń.
-- Log zdarzeń można odtworzyć, aby wykryć rozbieżność SQLite z oczekiwanym stanem.
-- Analiza śledcza po naruszeniu kontraktu (exit code 3) jest możliwa nawet jeśli SQLite jest uszkodzony.
+- kompletna historia zmian stanu jest dostępna dla każdego uruchomienia,
+- możliwe jest porównywanie uruchomień po `run_id`,
+- możliwa jest analiza śledcza po awarii lub naruszeniu kontraktu,
+- log może służyć jako niezależny punkt odniesienia wobec SQLite,
+- łatwiejsza jest detekcja side effects i niejawnych zmian stanu.
 
 ### Negatywne / zaakceptowane kompromisy
 
-- Log zdarzeń rośnie w nieskończoność. Obecnie nie ma polityki kompaktowania.
-- Dołączanie do JSONL przy każdym zdarzeniu jest sekwencyjną operacją I/O; stanowi wąskie gardło przy uruchomieniach o dużej objętości.
-- Log zdarzeń i SQLite mogą tymczasowo się rozbiec między zapisem do SQLite a kolejnym dołączeniem do logu. Jest to zaakceptowane; niezmiennik (I1 w `EXECUTION_CONTRACT.md`) wymaga zapisu do SQLite przed dołączeniem do logu, a nie atomowości obu operacji.
+- log rośnie bez ograniczenia, jeśli nie ma polityki archiwizacji,
+- append I/O staje się kosztem obowiązkowym dla state-changing runs,
+- między zapisem do SQLite a dołączeniem do logu może istnieć krótkie okno rozbieżności,
+- konieczna jest osobna walidacja integralności logu.
 
 ### Odroczone
 
-- Narzędzie do odtwarzania między uruchomieniami (`itdlab audit replay`) nie jest zaimplementowane w v1.
-- Polityka kompaktowania / archiwizacji jest odroczona.
-- Podpisywanie logu zdarzeń / wykrywanie manipulacji jest odroczone.
+- `itdlab audit replay` jako pełne narzędzie odtwarzania,
+- polityka kompaktowania / archiwizacji logu,
+- podpisywanie logu i wykrywanie manipulacji kryptograficznie.
 
 ---
 
-## Uwagi implementacyjne
+## Implikacje implementacyjne
 
-- Log zdarzeń jest zapisywany przez `internal/adapters/jsonl/event_log.go`.
-- Dołączanie chronione muteksem; bezpieczne dla współbieżnych goroutine w ramach jednego uruchomienia.
-- Każde uruchomienie tworzy osobny wycinek zdarzeń identyfikowalny przez `run_id`.
-- `itdlab audit runs` odczytuje log zdarzeń, aby wylistować historyczne uruchomienia.
+1. Adapter logu zdarzeń musi być append-only i blokować modyfikację istniejących wpisów.
+2. Każde zdarzenie musi zawierać `run_id` i obowiązkowy zestaw pól.
+3. Log zdarzeń musi być uwzględniany w evidence pack i weryfikacji kompletności.
+4. Materialization checks powinny porównywać event log z persisted state w SQLite.
+5. Naruszenie integralności logu musi wpływać na trust/evidence status przebiegu.
+6. Dla state-changing runs brak event logu oznacza brak pełnego, wiarygodnego wyniku.
 
 ---
 
-## Odwołania wewnętrzne
+## Review triggers
+
+ADR powinien zostać zrewidowany, jeśli:
+- pojawi się potrzeba wielostrumieniowego lub rozproszonego logowania,
+- event log stanie się istotnym bottleneckiem wydajnościowym,
+- zostanie wdrożony podpis lub zewnętrzny system archiwizacji,
+- model evidence pack przestanie traktować log jako obowiązkowy element audytu.
+
+---
+
+## Internal references
 - `docs/EXECUTION_ASSURANCE_PROGRAM.md`
 - `docs/EXECUTION_CONTRACT.md`
 - `docs/EVIDENCE_MODEL.md`
 - `docs/ADR/ADR-001-sqlite-as-source-of-truth.md`
+- `docs/CONTEXT_VOCABULARY.md`
 
-## Metadane przeglądu
-- Owner: zespół projektowy
-- Status: zaakceptowany
+## Authority anchors
+- `docs/REFERENCES.md` — software lifecycle and verification references
+- `docs/REFERENCES.md` — requirements engineering and testing references
+
+## Review metadata
+- Owner: experimental-repository maintainer
+- Status: accepted
 - Last reviewed: 2026-03-30
