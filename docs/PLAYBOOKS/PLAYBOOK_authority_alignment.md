@@ -1,57 +1,57 @@
 # Playbook: Authority Alignment
 
-## Purpose
+## Cel
 
-Defines the strategy for linking IT documentation artifacts to regulatory and standards authorities.
-
----
-
-## What Is an Authority Reference?
-
-An authority reference (`authority_ref`) links a document or section to a specific clause in an external authority:
-- Regulatory frameworks (e.g., ISO 27001, GDPR, 21 CFR Part 11)
-- Industry standards (e.g., ITIL, COBIT)
-- Internal policies (treated as internal authorities)
+Definiuje strategię powiązania artefaktów dokumentacji IT z regulacyjnymi i normalizacyjnymi organami władzy (authorities).
 
 ---
 
-## When to Create Authority Refs
+## Czym jest odwołanie do organu?
 
-1. A document explicitly cites a regulation or standard in its text
-2. A section heading or content maps to a known clause
-3. An industry matrix requires specific documents for compliance
+Odwołanie do organu (`authority_ref`) łączy dokument lub sekcję z konkretnym punktem zewnętrznego organu władzy:
+- Ramy regulacyjne (np. ISO 27001, GDPR, 21 CFR Part 11)
+- Standardy branżowe (np. ITIL, COBIT)
+- Wewnętrzne polityki (traktowane jako wewnętrzne organy władzy)
 
 ---
 
-## Authority Alignment Process
+## Kiedy tworzyć odwołania do organów
 
-### 1. Define authorities
+1. Dokument wprost cytuje regulację lub standard w swoim tekście
+2. Nagłówek lub treść sekcji odpowiada konkretnemu punktowi
+3. Macierz branżowa wymaga określonych dokumentów dla zgodności
 
-Authorities are referenced by name + clause, e.g.:
+---
+
+## Proces wyrównania do organów
+
+### 1. Zdefiniuj organy
+
+Organy są odwoływane przez nazwę + punkt, np.:
 - `authority: "ISO 27001"`, `clause: "A.12.6.1"`
 - `authority: "GDPR"`, `clause: "Art. 32"`
 
-### 2. Link documents
+### 2. Powiąż dokumenty
 
 ```
 itdlab authority check
 ```
 
-This:
-1. Scans all ingested documents for authority patterns
-2. Creates `authority_ref` rows for detected matches
-3. Reports coverage per authority in `authority_coverage_report.json`
+Polecenie:
+1. Skanuje wszystkie zingestowane dokumenty w poszukiwaniu wzorców organów
+2. Tworzy wiersze `authority_ref` dla wykrytych dopasowań
+3. Raportuje pokrycie dla każdego organu w `authority_coverage_report.json`
 
-### 3. Review coverage
+### 3. Przejrzyj pokrycie
 
-A document set's authority coverage is the ratio of linked clauses to total clauses for that authority. Target: ≥ 80% for any required authority.
+Pokrycie organów dla zestawu dokumentów to stosunek powiązanych punktów do łącznej liczby punktów danego organu. Cel: ≥ 80% dla każdego wymaganego organu.
 
 ---
 
-## Failure Modes
+## Tryby awaryjne
 
-| Symptom | Action |
-|---------|--------|
-| Low coverage for a required authority | Review documents for missing citations |
-| Duplicate authority refs | Check for re-runs without deduplication |
-| Authority name mismatch | Standardize authority names before linking |
+| Objaw | Działanie |
+|-------|-----------|
+| Niskie pokrycie wymaganego organu | Przejrzyj dokumenty pod kątem brakujących cytowań |
+| Zduplikowane odwołania do organów | Sprawdź ponowne uruchomienia bez deduplikacji |
+| Niezgodność nazwy organu | Ustandaryzuj nazwy organów przed powiązaniem |

@@ -1,72 +1,72 @@
 # Playbook: Source Ingest
 
-## Purpose
+## Cel
 
-Defines the strategy for ingesting raw IT documentation sources into the semantic lab.
-
----
-
-## When to Use This Playbook
-
-- Adding new source documents to `sources/`
-- Re-ingesting after source files are updated
-- Debugging a failed ingest run
+Definiuje strategię przyjmowania (ingestowania) surowych źródeł dokumentacji IT do laboratorium semantycznego.
 
 ---
 
-## Ingest Strategy
+## Kiedy stosować ten Playbook
 
-### 1. Source Placement
+- Dodawanie nowych dokumentów źródłowych do `sources/`
+- Ponowne ingestowanie po aktualizacji plików źródłowych
+- Diagnozowanie nieudanego uruchomienia ingestowania
 
-Place raw Markdown files in the appropriate subdirectory:
+---
+
+## Strategia ingestowania
+
+### 1. Umieszczanie źródeł
+
+Umieść surowe pliki Markdown w odpowiednim podkatalogu:
 
 ```
 sources/
-  matrices/    — industry document matrices
-  metagraph/   — metagraph definitions
-  plans/       — project plans and roadmaps
+  matrices/    — macierze dokumentów branżowych
+  metagraph/   — definicje metagrafu
+  plans/       — plany projektu i mapy drogowe
 ```
 
-Files must be UTF-8 encoded Markdown. No BOM. No binary attachments.
+Pliki muszą być zakodowane w UTF-8 Markdown. Bez BOM. Bez załączników binarnych.
 
-### 2. Pre-Ingest Validation
+### 2. Walidacja przed ingestowaniem
 
-Before running ingest:
-- Run Layer 1–5 tests (contract & input validation)
-- Verify file encodings
-- Confirm at least one heading per file
+Przed uruchomieniem ingestowania:
+- Uruchom testy Layer 1–5 (walidacja kontraktu i danych wejściowych)
+- Zweryfikuj kodowania plików
+- Upewnij się, że każdy plik zawiera co najmniej jeden nagłówek
 
-### 3. Ingest Run
+### 3. Uruchomienie ingestowania
 
 ```
 itdlab ingest run --source sources/
 ```
 
-This:
-1. Discovers all `.md` files under the source path
-2. Parses each file (headings, sections, metadata)
-3. Writes a `Document` row to SQLite per file
-4. Appends `ingested` events to `runs/events.jsonl`
-5. Writes `source_manifest.json` and `parse_report.json` to `reports/<run_id>/`
+Polecenie:
+1. Wykrywa wszystkie pliki `.md` pod podaną ścieżką źródłową
+2. Parsuje każdy plik (nagłówki, sekcje, metadane)
+3. Zapisuje wiersz `Document` do SQLite dla każdego pliku
+4. Dołącza zdarzenia `ingested` do `runs/events.jsonl`
+5. Zapisuje `source_manifest.json` i `parse_report.json` do `reports/<run_id>/`
 
-### 4. Post-Ingest Verification
+### 4. Weryfikacja po ingestowaniu
 
 ```
-itdlab ingest inspect <path>   # review a specific file's parse result
+itdlab ingest inspect <path>   # przegląd wyniku parsowania konkretnego pliku
 ```
 
-Check:
-- All expected documents appear in SQLite
-- No parse errors in `parse_report.json`
-- Event log has entries for all ingested files
+Sprawdź:
+- Wszystkie oczekiwane dokumenty są widoczne w SQLite
+- Brak błędów parsowania w `parse_report.json`
+- Dziennik zdarzeń zawiera wpisy dla wszystkich zingestowanych plików
 
 ---
 
-## Failure Modes
+## Tryby awaryjne
 
-| Symptom | Likely Cause | Action |
-|---------|-------------|--------|
-| File not in source manifest | File not in source path | Verify placement |
-| Encoding error | BOM or non-UTF-8 | Convert with `iconv` |
-| Zero headings | File has no `#` headings | Check Markdown structure |
-| Gate 1 failure | Contract violation | Fix source file, re-run |
+| Objaw | Prawdopodobna przyczyna | Działanie |
+|-------|------------------------|-----------|
+| Plik nieobecny w manifeście źródłowym | Plik nie znajduje się w ścieżce źródłowej | Zweryfikuj umieszczenie |
+| Błąd kodowania | BOM lub kodowanie inne niż UTF-8 | Konwertuj za pomocą `iconv` |
+| Brak nagłówków | Plik nie zawiera nagłówków `#` | Sprawdź strukturę Markdown |
+| Niepowodzenie Gate 1 | Naruszenie kontraktu | Popraw plik źródłowy, uruchom ponownie |

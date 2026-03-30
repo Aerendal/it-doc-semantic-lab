@@ -1,370 +1,370 @@
 # Quality Gates
 
-## Purpose
+## Cel
 
-This document defines the **quality gates** used in the experimental repository.
+Niniejszy dokument definiuje **bramki jakości** używane w repozytorium eksperymentalnym.
 
-The goal of the gate model is to ensure that repository work is not treated as complete merely because code exists or because a partial run produced a superficially green result.
+Celem modelu bramek jest zapewnienie, że prace nad repozytorium nie są traktowane jako zakończone jedynie dlatego, że kod istnieje lub że częściowy przebieg wyprodukował powierzchownie zielony wynik.
 
-A change, run, experiment, or promotion candidate must pass the relevant gate set before it is considered:
-- technically credible,
-- operationally reproducible,
-- auditable,
-- eligible for promotion,
-- or suitable for external review.
+Zmiana, przebieg, eksperyment lub kandydat do promocji musi przejść przez właściwy zestaw bramek, zanim zostanie uznany za:
+- wiarygodny technicznie,
+- operacyjnie reprodukowalny,
+- audytowalny,
+- kwalifikujący się do promocji,
+- lub nadający się do zewnętrznego przeglądu.
 
-This document is part of the execution-assurance program described in `docs/EXECUTION_ASSURANCE_PROGRAM.md`.
+Niniejszy dokument jest częścią programu zapewnienia wykonania opisanego w `docs/EXECUTION_ASSURANCE_PROGRAM.md`.
 
 ---
 
-## Testing-standard dependency
+## Zależność od standardu testowania
 
-Gate evaluation depends on the repository testing standard and the test catalog.
+Ocena bramek zależy od standardu testowania repozytorium i katalogu testów.
 
-**Normative source:**
-- `docs/TESTING_STANDARD.md` — testing philosophy, 6 levels, mandatory rules and conventions
+**Źródło normatywne:**
+- `docs/TESTING_STANDARD.md` — filozofia testowania, 6 poziomów, obowiązkowe zasady i konwencje
 
-**Operational layer definitions:**
-- `docs/TEST_CATALOG.md` — 30-layer test catalog with per-layer gate mapping, mock policy and evidence strength
+**Definicje warstw operacyjnych:**
+- `docs/TEST_CATALOG.md` — 30-warstwowy katalog testów z mapowaniem bramek per warstwę, polityką mocków i siłą dowodów
 
-A gate may not be reported as credible if the required test layers were not executed, were silently skipped, or produced insufficient evidence.
+Bramka nie może być raportowana jako wiarygodna, jeśli wymagane warstwy testów nie zostały wykonane, zostały po cichu pominięte lub wytworzyły niewystarczające dowody.
 
-The exception and mock policies that govern what deviations are permissible are defined in:
+Polityki wyjątków i mocków, które określają dopuszczalne odchylenia, są zdefiniowane w:
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
 - `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
 
 ---
 
-## Principles
+## Zasady
 
-1. **Evidence over assertion**  
-   A claim that a capability works must be backed by logs, manifests, reports, and repeatable execution.
+1. **Dowody ponad twierdzenia**  
+   Twierdzenie, że dana funkcjonalność działa, musi być poparte logami, manifestami, raportami i powtarzalnym wykonaniem.
 
-2. **Scope-aware gates**  
-   Not every change requires every gate. Gates are applied according to the type and impact of the change.
+2. **Bramki uwzględniające zakres**  
+   Nie każda zmiana wymaga każdej bramki. Bramki są stosowane zgodnie z typem i wpływem zmiany.
 
-3. **No hidden softening of standards**  
-   Skips, mocks, bypasses, degraded modes, and manual overrides must be explicit and reviewable.
+3. **Brak ukrytego łagodzenia standardów**  
+   Pominięcia, mocki, obejścia, tryby degraded oraz ręczne nadpisania muszą być jawne i możliwe do przeglądu.
 
-4. **Promotion only after proof**  
-   Promotion to the stable repository is allowed only after the promotion gate has passed.
+4. **Promocja wyłącznie po udowodnieniu**  
+   Promocja do stabilnego repozytorium jest dozwolona tylko po przejściu bramki promocji.
 
-5. **Fail closed where needed**  
-   For critical paths, missing evidence or ambiguous status is treated as failure, not success.
-
----
-
-# Gate levels
-
-The repository uses five gate levels.
-
-## Gate G0 — Repository hygiene gate
-
-### Purpose
-Ensure the repository is in a reviewable and non-chaotic state before deeper validation is attempted.
-
-### Applies to
-- every branch proposed for review,
-- every PR candidate,
-- every release candidate,
-- every promotion candidate.
-
-### Minimum checks
-- working tree is clean for the evaluated state,
-- required documentation files exist,
-- no forbidden local artifacts are committed,
-- no temporary/debug-only files are part of the change,
-- file naming and repository structure remain consistent.
-
-### Required evidence
-- repository status summary,
-- file inventory delta,
-- forbidden-artifact check result.
-
-### Failure examples
-- stray archives committed,
-- temporary reports committed,
-- debug helper files left in tracked tree,
-- undocumented repo structure changes.
+5. **Zamknięte na błąd tam, gdzie to konieczne**  
+   Dla ścieżek krytycznych brakujące dowody lub niejednoznaczny status są traktowane jako błąd, nie sukces.
 
 ---
 
-## Gate G1 — Static contract gate
+# Poziomy bramek
 
-### Purpose
-Ensure the repository contract is internally coherent before runtime execution.
+Repozytorium używa pięciu poziomów bramek.
 
-### Applies to
-- schema changes,
-- CLI changes,
-- configuration changes,
-- source model changes,
-- relation model changes,
-- export model changes.
+## Gate G0 — Bramka higieny repozytorium
 
-### Minimum checks
-- required files and schemas load successfully,
-- YAML/JSON/Markdown contract files parse correctly,
-- field names, required fields, and enumerations are valid,
-- no forbidden or deprecated field usage is introduced,
-- command signatures remain interpretable.
+### Cel
+Zapewnienie, że repozytorium jest w stanie możliwym do przeglądu i niechaotyczenym, zanim zostanie podjęta głębsza walidacja.
 
-### Required evidence
-- schema validation report,
-- static lint report,
-- contract diff summary.
+### Dotyczy
+- każdej gałęzi proponowanej do przeglądu,
+- każdego kandydata PR,
+- każdego kandydata do wydania,
+- każdego kandydata do promocji.
 
-### Failure examples
-- invalid YAML in schema files,
-- missing required schema fields,
-- mixed typing for the same field,
-- broken command definitions,
-- undocumented contract drift.
+### Minimalne kontrole
+- drzewo robocze jest czyste dla ocenianego stanu,
+- wymagane pliki dokumentacji istnieją,
+- żadne zabronione artefakty lokalne nie są zatwierdzone,
+- żadne pliki tymczasowe/wyłącznie debugowe nie są częścią zmiany,
+- nazewnictwo plików i struktura repozytorium pozostają spójne.
 
----
+### Wymagane dowody
+- podsumowanie statusu repozytorium,
+- delta inwentarza plików,
+- wynik kontroli zabronionych artefaktów.
 
-## Gate G2 — Execution integrity gate
-
-### Purpose
-Ensure that the run actually happened in a technically credible way.
-
-### Applies to
-- ingest runs,
-- normalization runs,
-- relation inference runs,
-- export runs,
-- experiment result claims.
-
-### Minimum checks
-- run manifest is generated,
-- executed steps are listed,
-- skipped steps are listed explicitly,
-- configuration and input set are recorded,
-- logs exist and correspond to the manifest,
-- result status is explicit (`PASS`, `FAIL`, `WARN`, `INCOMPLETE`).
-
-### Required evidence
-- run manifest,
-- execution logs,
-- configuration snapshot,
-- checksums or fingerprints of critical inputs,
-- summary report.
-
-### Failure examples
-- no manifest,
-- ambiguous run status,
-- steps executed but not recorded,
-- evidence pack missing mandatory files,
-- mismatch between manifest and produced outputs.
+### Przykłady błędów
+- zatwierdzone błędne archiwa,
+- zatwierdzone tymczasowe raporty,
+- pliki pomocnicze debugowania pozostawione w śledzonym drzewie,
+- nieudokumentowane zmiany struktury repozytorium.
 
 ---
 
-## Gate G3 — Verification credibility gate
+## Gate G1 — Bramka kontraktu statycznego
 
-### Purpose
-Ensure that validation was meaningful and not weakened by silent skips, unjustified mocks, or low-value evidence.
+### Cel
+Zapewnienie, że kontrakt repozytorium jest wewnętrznie spójny przed wykonaniem w czasie rzeczywistym.
 
-### Applies to
-- all experiment slices,
-- all semantic feature claims,
-- all promotion candidates,
-- all externally reviewed runs.
+### Dotyczy
+- zmian schematów,
+- zmian CLI,
+- zmian konfiguracji,
+- zmian modelu źródłowego,
+- zmian modelu relacji,
+- zmian modelu eksportu.
 
-### Minimum checks
-- applicable tests executed,
-- skip usage is explicit and justified,
-- xfail usage is explicit and justified,
-- mocking on critical paths complies with policy,
-- golden outputs are current and reviewable,
-- determinism expectations are met or explained.
+### Minimalne kontrole
+- wymagane pliki i schematy wczytują się pomyślnie,
+- pliki kontraktów YAML/JSON/Markdown parsują się poprawnie,
+- nazwy pól, wymagane pola i wyliczenia są prawidłowe,
+- nie wprowadzono zabronionych ani przestarzałych pól,
+- sygnatury poleceń pozostają interpretowalne.
 
-### Required evidence
-- test summary,
-- skip/xfail audit report,
-- mock-path vs real-path report,
-- determinism report,
-- golden verification report.
+### Wymagane dowody
+- raport walidacji schematu,
+- raport statycznego lintera,
+- podsumowanie różnicy kontraktu.
 
-### Failure examples
-- critical-path behavior validated only through hidden mocks,
-- new skip added without registration,
-- green result with missing golden verification,
-- unstable output without explanation,
-- tests passing only in degraded mode.
-
----
-
-## Gate G4 — Promotion gate
-
-### Purpose
-Decide whether an experimental capability is eligible for promotion to the stable repository.
-
-### Applies to
-- features intended for `IT-Dokumentacja`,
-- exports intended to become repository contract,
-- metadata fields intended for stable templates,
-- reusable mechanisms intended for stable runtime.
-
-### Minimum checks
-- G0–G3 passed,
-- gold standard exists,
-- all required corpus cases pass,
-- idempotency is confirmed,
-- integration dry-run is green,
-- stable repository validation remains green after integration.
-
-### Required evidence
-- promotion candidate report,
-- corpus coverage report,
-- idempotency report,
-- integration verification report,
-- rollback note or rollback feasibility statement.
-
-### Failure examples
-- passing only on one happy-path case,
-- no gold standard,
-- unstable repeat execution,
-- stable repository broken after merge attempt,
-- unclear migration consequences.
+### Przykłady błędów
+- nieprawidłowy YAML w plikach schematów,
+- brakujące wymagane pola schematu,
+- mieszane typowanie dla tego samego pola,
+- zepsute definicje poleceń,
+- nieudokumentowane odchylenia kontraktu.
 
 ---
 
-# Gate application matrix
+## Gate G2 — Bramka integralności wykonania
 
-## Change types and required minimum gate
+### Cel
+Zapewnienie, że przebieg faktycznie nastąpił w wiarygodny technicznie sposób.
 
-| Change type | Minimum gate |
+### Dotyczy
+- przebiegów ingestu,
+- przebiegów normalizacji,
+- przebiegów wnioskowania relacji,
+- przebiegów eksportu,
+- twierdzeń o wynikach eksperymentów.
+
+### Minimalne kontrole
+- manifest przebiegu jest wygenerowany,
+- wykonane kroki są wymienione,
+- pominięte kroki są jawnie wymienione,
+- konfiguracja i zestaw wejść są zarejestrowane,
+- logi istnieją i odpowiadają manifestowi,
+- status wyników jest jawny (`PASS`, `FAIL`, `WARN`, `INCOMPLETE`).
+
+### Wymagane dowody
+- manifest przebiegu,
+- logi wykonania,
+- migawka konfiguracji,
+- sumy kontrolne lub odciski palców krytycznych wejść,
+- raport podsumowujący.
+
+### Przykłady błędów
+- brak manifestu,
+- niejednoznaczny status przebiegu,
+- wykonane kroki, ale niezarejestrowane,
+- paczka dowodów brakuje obowiązkowych plików,
+- niezgodność między manifestem a wytworzonymi wynikami.
+
+---
+
+## Gate G3 — Bramka wiarygodności weryfikacji
+
+### Cel
+Zapewnienie, że walidacja była znacząca i nieosłabiona przez ciche pominięcia, nieuzasadnione mocki lub dowody o niskiej wartości.
+
+### Dotyczy
+- wszystkich wycinków eksperymentów,
+- wszystkich twierdzeń o funkcjach semantycznych,
+- wszystkich kandydatów do promocji,
+- wszystkich zewnętrznie recenzowanych przebiegów.
+
+### Minimalne kontrole
+- mające zastosowanie testy zostały wykonane,
+- użycie pomijania jest jawne i uzasadnione,
+- użycie xfail jest jawne i uzasadnione,
+- mockowanie na ścieżkach krytycznych jest zgodne z polityką,
+- golden outputs są aktualne i możliwe do przeglądu,
+- oczekiwania dotyczące determinizmu są spełnione lub wyjaśnione.
+
+### Wymagane dowody
+- podsumowanie testów,
+- raport audytu pomijania/xfail,
+- raport ścieżki mock vs ścieżki rzeczywistej,
+- raport determinizmu,
+- raport weryfikacji golden.
+
+### Przykłady błędów
+- zachowanie na ścieżce krytycznej walidowane wyłącznie przez ukryte mocki,
+- nowe pominięcie dodane bez rejestracji,
+- zielony wynik z brakującą weryfikacją golden,
+- niestabilne wyniki bez wyjaśnienia,
+- testy przechodzące tylko w trybie degraded.
+
+---
+
+## Gate G4 — Bramka promocji
+
+### Cel
+Decydowanie, czy eksperymentalna funkcjonalność kwalifikuje się do promocji do stabilnego repozytorium.
+
+### Dotyczy
+- funkcji przeznaczonych dla `IT-Dokumentacja`,
+- eksportów mających stać się kontraktem repozytorium,
+- pól metadanych przeznaczonych dla stabilnych szablonów,
+- mechanizmów wielokrotnego użytku przeznaczonych dla stabilnego środowiska uruchomieniowego.
+
+### Minimalne kontrole
+- G0–G3 przeszły,
+- złoty standard istnieje,
+- wszystkie wymagane przypadki corpus przechodzą,
+- idempotentność jest potwierdzona,
+- dry-run integracji jest zielony,
+- walidacja stabilnego repozytorium pozostaje zielona po integracji.
+
+### Wymagane dowody
+- raport kandydata do promocji,
+- raport pokrycia corpus,
+- raport idempotentności,
+- raport weryfikacji integracji,
+- notatka o wycofaniu lub oświadczenie o możliwości wycofania.
+
+### Przykłady błędów
+- przejście wyłącznie na jednym przypadku happy-path,
+- brak złotego standardu,
+- niestabilne powtarzalne wykonanie,
+- stabilne repozytorium zepsute po próbie scalenia,
+- niejasne konsekwencje migracji.
+
+---
+
+# Macierz zastosowania bramek
+
+## Typy zmian i wymagana minimalna bramka
+
+| Typ zmiany | Minimalna bramka |
 |---|---|
-| Documentation-only note, no contract impact | G0 |
-| Schema / YAML / contract definition change | G1 |
-| Parser / normalizer / relation execution change | G2 |
-| Test-affecting or verification-affecting change | G3 |
-| Promotion to stable repository | G4 |
+| Wyłącznie dokumentacyjna notatka, bez wpływu na kontrakt | G0 |
+| Zmiana definicji schematu / YAML / kontraktu | G1 |
+| Zmiana parsera / normalizatora / wykonania relacji | G2 |
+| Zmiana wpływająca na testy lub weryfikację | G3 |
+| Promocja do stabilnego repozytorium | G4 |
 
-## Escalation rule
-If a change touches more than one category, the **highest applicable gate wins**.
+## Reguła eskalacji
+Jeśli zmiana dotyczy więcej niż jednej kategorii, **obowiązuje najwyższa mająca zastosowanie bramka**.
 
-Example:
-- a parser refactor that also changes schema rules and test expectations is **not** G2 only; it must satisfy **G3**.
+Przykład:
+- refaktoryzacja parsera, która zmienia również reguły schematu i oczekiwania testów, to **nie** tylko G2; musi spełniać **G3**.
 
 ---
 
-# Gate status model
+# Model statusu bramki
 
-Each gate outcome must use one of the following statuses:
+Każdy wynik bramki musi używać jednego z następujących statusów:
 
-- `PASS` — gate satisfied,
-- `WARN` — gate satisfied with a documented non-blocking issue,
-- `FAIL` — gate not satisfied,
-- `INCOMPLETE` — evaluation could not be completed due to missing required evidence.
+- `PASS` — bramka spełniona,
+- `WARN` — bramka spełniona z udokumentowanym problemem nieblokującym,
+- `FAIL` — bramka niespełniona,
+- `INCOMPLETE` — ocena nie mogła zostać zakończona z powodu brakujących wymaganych dowodów.
 
-## Interpretation rules
+## Reguły interpretacji
 
 ### PASS
-Used only when all mandatory checks for the gate are satisfied.
+Używane tylko gdy wszystkie obowiązkowe kontrole dla bramki są spełnione.
 
 ### WARN
-Used only when:
-- the gate was executed,
-- evidence is complete,
-- the issue is documented,
-- the issue is explicitly classified as non-blocking.
+Używane tylko gdy:
+- bramka została wykonana,
+- dowody są kompletne,
+- problem jest udokumentowany,
+- problem jest jawnie sklasyfikowany jako nieblokujący.
 
 ### FAIL
-Used when any blocking requirement is violated.
+Używane gdy jakiekolwiek wymaganie blokujące jest naruszone.
 
 ### INCOMPLETE
-Used when the evaluation itself is not trustworthy due to missing mandatory evidence.
+Używane gdy sama ocena nie jest wiarygodna z powodu brakujących obowiązkowych dowodów.
 
-> `INCOMPLETE` must never be reported as if it were equivalent to `PASS`.
-
----
-
-# Forbidden patterns
-
-The following patterns are forbidden unless explicitly documented and approved under the exception policy.
-
-## Skip-related
-- silent introduction of `skip` or `xfail`,
-- broad conditional skip without explicit reason,
-- skip used as substitute for fixing a broken path.
-
-## Mock-related
-- mocking critical runtime/data paths without explicit policy allowance,
-- replacing real verification with fake adapters while reporting the result as real validation,
-- monkeypatching behavior in a way that hides actual integration risk.
-
-## Evidence-related
-- claiming success without manifest and logs,
-- deleting or omitting evidence for a claimed run,
-- publishing a PASS summary with missing mandatory artifacts.
-
-## Contract-related
-- introducing new required fields without schema update,
-- using the same field with conflicting semantics,
-- changing export semantics without documenting migration consequences.
+> `INCOMPLETE` nigdy nie może być raportowane tak, jakby było równoważne z `PASS`.
 
 ---
 
-# Exceptions and deviations
+# Zabronione wzorce
 
-Exceptions are allowed only when all of the following are true:
+Następujące wzorce są zabronione, chyba że zostały jawnie udokumentowane i zatwierdzone w ramach polityki wyjątków.
 
-1. the exception is documented,
-2. the reason is specific and technical,
-3. the scope is limited,
-4. the duration is limited or review-triggered,
-5. the resulting risk is described,
-6. the repository still reports the degraded status honestly.
+## Związane z pomijaniem
+- ciche wprowadzanie `skip` lub `xfail`,
+- szerokie warunkowe pomijanie bez jawnego powodu,
+- pomijanie używane jako substytut naprawy zepsutej ścieżki.
 
-## Required exception record fields
-- exception ID,
-- date,
-- owner,
-- affected gate,
-- affected component,
-- reason,
-- risk,
-- expiry/review date,
-- mitigation plan.
+## Związane z mockami
+- mockowanie krytycznych ścieżek środowiska uruchomieniowego/danych bez jawnego zezwolenia polityki,
+- zastępowanie rzeczywistej weryfikacji fałszywymi adapterami przy raportowaniu wyników jako prawdziwej walidacji,
+- monkeypatching zachowania w sposób ukrywający rzeczywiste ryzyko integracji.
 
-Recommended file:
+## Związane z dowodami
+- twierdzenie o sukcesie bez manifestu i logów,
+- usuwanie lub pomijanie dowodów dla twierdzonego przebiegu,
+- publikowanie podsumowania PASS z brakującymi obowiązkowymi artefaktami.
+
+## Związane z kontraktem
+- wprowadzanie nowych wymaganych pól bez aktualizacji schematu,
+- używanie tego samego pola z konfliktującą semantyką,
+- zmiana semantyki eksportu bez dokumentowania konsekwencji migracji.
+
+---
+
+# Wyjątki i odchylenia
+
+Wyjątki są dozwolone tylko gdy wszystkie poniższe warunki są prawdziwe:
+
+1. wyjątek jest udokumentowany,
+2. powód jest konkretny i techniczny,
+3. zakres jest ograniczony,
+4. czas trwania jest ograniczony lub wyzwalany przeglądem,
+5. wynikające ryzyko jest opisane,
+6. repozytorium nadal uczciwie raportuje status degraded.
+
+## Wymagane pola rekordu wyjątku
+- ID wyjątku,
+- data,
+- właściciel,
+- dotknięta bramka,
+- dotknięty komponent,
+- powód,
+- ryzyko,
+- data wygaśnięcia/przeglądu,
+- plan mitygacji.
+
+Zalecany plik:
 - `docs/EXCEPTION_REGISTER.md`
 
 ---
 
-# Required evidence per gate
+# Wymagane dowody per bramka
 
-| Gate | Minimum evidence |
+| Bramka | Minimalne dowody |
 |---|---|
-| G0 | repo status summary, forbidden-artifact check |
-| G1 | schema validation report, static lint report |
-| G2 | run manifest, logs, config snapshot, summary |
-| G3 | test summary, skip audit, mock audit, determinism report |
-| G4 | promotion report, corpus coverage, idempotency report, stable integration verification |
+| G0 | podsumowanie statusu repozytorium, kontrola zabronionych artefaktów |
+| G1 | raport walidacji schematu, raport statycznego lintera |
+| G2 | manifest przebiegu, logi, migawka konfiguracji, podsumowanie |
+| G3 | podsumowanie testów, audyt pomijania, audyt mocków, raport determinizmu |
+| G4 | raport promocji, pokrycie corpus, raport idempotentności, weryfikacja integracji stabilnej |
 
 ---
 
-# Release and promotion rule
+# Reguła wydania i promocji
 
-A component may be promoted from the experimental repository to the stable repository only if:
+Komponent może zostać promowany z repozytorium eksperymentalnego do stabilnego tylko jeśli:
 
-1. the intended stable scope is explicit,
-2. G0–G4 pass,
-3. the feature has a gold standard,
-4. corpus coverage is sufficient for the claimed scope,
-5. integration into the stable repository remains green,
-6. rollback is feasible or explicitly analyzed.
+1. zamierzony stabilny zakres jest jawny,
+2. G0–G4 przechodzą,
+3. funkcja ma złoty standard,
+4. pokrycie corpus jest wystarczające dla deklarowanego zakresu,
+5. integracja do stabilnego repozytorium pozostaje zielona,
+6. wycofanie jest możliwe lub jawnie przeanalizowane.
 
-If any of these conditions is missing, the feature remains experimental.
+Jeśli którykolwiek z tych warunków jest niespełniony, funkcja pozostaje eksperymentalna.
 
 ---
 
-# Mapping to the execution-assurance program
+# Mapowanie do programu zapewnienia wykonania
 
-This document implements **Stage 1 — Gate model and enforcement policy** from `docs/EXECUTION_ASSURANCE_PROGRAM.md`.
+Niniejszy dokument implementuje **Etap 1 — Model bramek i polityka egzekwowania** z `docs/EXECUTION_ASSURANCE_PROGRAM.md`.
 
-Follow-on documents expected after this one:
+Dokumenty następcze oczekiwane po tym:
 - `docs/TESTING_STANDARD.md`
 - `docs/TEST_CATALOG.md`
 - `docs/EVIDENCE_MODEL.md`
@@ -373,13 +373,13 @@ Follow-on documents expected after this one:
 
 ---
 
-# Final note
+# Uwaga końcowa
 
-The purpose of quality gates is not to make experimentation impossible.
+Celem bramek jakości nie jest uniemożliwienie eksperymentowania.
 
-The purpose is to ensure that experimentation remains:
-- explicit,
-- disciplined,
-- reviewable,
-- evidence-backed,
-- and resistant to accidental or intentional weakening of technical standards.
+Celem jest zapewnienie, że eksperymentowanie pozostaje:
+- jawne,
+- zdyscyplinowane,
+- możliwe do przeglądu,
+- poparte dowodami,
+- i odporne na przypadkowe lub celowe osłabianie standardów technicznych.

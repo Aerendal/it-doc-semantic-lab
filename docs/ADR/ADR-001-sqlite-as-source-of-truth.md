@@ -1,42 +1,42 @@
 # ADR-001: SQLite as Source of Truth
 
-**Status:** Accepted  
-**Deciders:** Project team  
+**Status:** Zaakceptowany  
+**Deciders:** Zespół projektowy  
 **Date:** 2026-03-29
 
 ---
 
-## Context
+## Kontekst
 
-The semantic lab needs a queryable, persistent store for documents, sections, relations, normalizations, and run history.  
-Options considered: flat files (YAML/JSON), PostgreSQL, Neo4j, SQLite.
+Laboratorium semantyczne potrzebuje odpytywalnego, trwałego magazynu dla dokumentów, sekcji, relacji, normalizacji i historii uruchomień.  
+Rozważane opcje: pliki płaskie (YAML/JSON), PostgreSQL, Neo4j, SQLite.
 
-## Decision
+## Decyzja
 
-Use **SQLite** as the single source of truth for all lab state.
+Użyj **SQLite** jako jedynego źródła prawdy dla całego stanu laboratorium.
 
-Complement it with an **append-only JSONL event log** (`runs/events.jsonl`) for audit, reproducibility, and run history — but SQLite is authoritative for current state.
+Uzupełnij go **append-only logiem zdarzeń JSONL** (`runs/events.jsonl`) na potrzeby audytu, odtwarzalności i historii uruchomień — lecz SQLite jest autorytatywny dla bieżącego stanu.
 
-## Rationale
+## Uzasadnienie
 
-| Criterion | SQLite | Alternatives |
+| Kryterium | SQLite | Alternatywy |
 |-----------|--------|-------------|
-| Zero-config | ✅ file-based | ❌ PostgreSQL requires server |
-| Queryable | ✅ full SQL | ❌ flat JSON not queryable |
-| Graph relations | ✅ JOIN-based | Neo4j is overkill at this scale |
-| CGO-free | ✅ `modernc.org/sqlite` | `mattn/go-sqlite3` requires CGO |
-| Portable binary | ✅ | ❌ server-based DBs |
-| Auditability | ✅ WAL mode + event log | |
+| Zero-config | ✅ plikowy | ❌ PostgreSQL wymaga serwera |
+| Odpytywalny | ✅ pełny SQL | ❌ płaski JSON nieodpytywalny |
+| Relacje grafowe | ✅ oparte na JOIN | Neo4j to przerost w tej skali |
+| CGO-free | ✅ `modernc.org/sqlite` | `mattn/go-sqlite3` wymaga CGO |
+| Przenośny binarny | ✅ | ❌ bazy oparte na serwerze |
+| Audytowalność | ✅ tryb WAL + log zdarzeń | |
 
-## Consequences
+## Konsekwencje
 
-- All writes go to SQLite first, then the event log.
-- The JSONL log can reconstruct SQLite state from scratch (reproducibility guarantee).
-- Schema migrations use `schema_version` table. Each version is an additive DDL file.
-- Neo4j or other graph stores may be added later as **read-only views** on top of SQLite exports — never as the primary store.
+- Wszystkie zapisy trafiają najpierw do SQLite, a następnie do logu zdarzeń.
+- Log JSONL może odtworzyć stan SQLite od podstaw (gwarancja odtwarzalności).
+- Migracje schematu korzystają z tabeli `schema_version`. Każda wersja to addytywny plik DDL.
+- Neo4j lub inne magazyny grafowe mogą zostać dodane później jako **widoki tylko do odczytu** na eksportach SQLite — nigdy jako główny magazyn.
 
-## Rejected Alternatives
+## Odrzucone alternatywy
 
-- **PostgreSQL** — requires external server, unnecessary for local lab tooling.
-- **Neo4j** — appropriate for graph traversal at scale; premature here.
-- **Flat YAML/JSON** — not queryable, no relational integrity.
+- **PostgreSQL** — wymaga zewnętrznego serwera; zbędny dla lokalnych narzędzi laboratoryjnych.
+- **Neo4j** — odpowiedni do przechodzenia grafów w skali; tutaj przedwczesny.
+- **Płaskie YAML/JSON** — nieodpytywalne, brak integralności relacyjnej.

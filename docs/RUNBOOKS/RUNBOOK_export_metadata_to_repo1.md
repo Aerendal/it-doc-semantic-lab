@@ -1,44 +1,44 @@
 # Runbook: Export Metadata to Repo 1
 
-## Prerequisites
+## Wymagania wstępne
 
-- All quality gates (1–5) have passed
-- Evidence pack is complete
-- Run has `status = 'completed'` in SQLite
-- Reference repository is checked out and on correct branch
+- Wszystkie bramki jakości (1–5) zostały zaliczone
+- Pakiet dowodów jest kompletny
+- Uruchomienie ma status `status = 'completed'` w SQLite
+- Repozytorium referencyjne jest przełączone na właściwą gałąź
 
-## Steps
+## Kroki
 
-### 1. Verify gate status
+### 1. Zweryfikuj status bramek
 
 ```sh
 sqlite3 db/semantic_index.sqlite \
   "SELECT run_id, status FROM runs ORDER BY started_at DESC LIMIT 1;"
 ```
 
-Expected: `status = 'completed'`
+Oczekiwany wynik: `status = 'completed'`
 
-### 2. Run export (dry-run first)
+### 2. Uruchom eksport (najpierw dry-run)
 
 ```sh
 ./bin/itdlab export repo1 --target ../IT-Dokumentacja/ --dry-run
 ```
 
-Review the list of files to be promoted.
+Przejrzyj listę plików przeznaczonych do promowania.
 
-### 3. Apply export
+### 3. Zastosuj eksport
 
 ```sh
 ./bin/itdlab export repo1 --target ../IT-Dokumentacja/
 ```
 
-### 4. Review export manifest
+### 4. Przejrzyj manifest eksportu
 
 ```sh
 cat reports/<run_id>/export_manifest.json
 ```
 
-### 5. Commit in reference repository
+### 5. Zatwierdź zmiany w repozytorium referencyjnym
 
 ```sh
 cd ../IT-Dokumentacja
@@ -47,8 +47,8 @@ git status
 git commit -m "chore: promote semantic metadata from lab run <run_id>"
 ```
 
-## Stop Conditions
+## Warunki zatrzymania
 
-- Exit code 2 → quality gate failure; check `gate_failures.json`
-- Files already up to date → no changes to promote
-- Target directory not found → verify `--target` path
+- Kod wyjścia 2 → błąd bramki jakości; sprawdź `gate_failures.json`
+- Pliki już aktualne → brak zmian do promowania
+- Katalog docelowy nie istnieje → sprawdź ścieżkę podaną w `--target`

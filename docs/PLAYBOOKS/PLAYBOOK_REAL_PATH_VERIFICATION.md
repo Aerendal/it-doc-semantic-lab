@@ -1,75 +1,75 @@
 # Playbook: Real-Path Verification
 
-**Version:** 1.0  
-**Scope:** All capability slices — applicable whenever a `mock-restricted` or `mock-forbidden` test layer is being executed
+**Wersja:** 1.0  
+**Zakres:** Wszystkie wycinki (capability slices) — stosowany zawsze, gdy wykonywana jest warstwa testów `mock-restricted` lub `mock-forbidden`
 
 ---
 
-## Purpose
+## Cel
 
-This playbook describes *how* to perform real-path verification: what it means, when to do it, what counts as passing, and what to do when it fails.
+Ten playbook opisuje *jak* przeprowadzać weryfikację rzeczywistej ścieżki (real-path verification): co to oznacza, kiedy ją wykonywać, co uznaje się za zaliczenie, oraz co robić w razie niepowodzenia.
 
-Real-path verification is not the same as running tests. It is the deliberate confirmation that the code path responsible for a test-covered behaviour was exercised against real, non-mocked dependencies.
-
----
-
-## When to Apply This Playbook
-
-Apply when any of the following is true:
-
-- You are preparing to claim a `mock-restricted` test layer as PASS.
-- You are preparing to claim a `mock-forbidden` test layer as PASS.
-- A reviewer has asked for real-path verification evidence.
-- You are preparing a promotion-readiness package for G4 or G5.
-- A run manifest shows `trusted = false` and the reason is a mock policy violation.
+Weryfikacja rzeczywistej ścieżki nie jest tym samym, co uruchamianie testów. Jest to celowe potwierdzenie, że ścieżka kodu odpowiedzialna za zachowanie objęte testami została wykonana na rzeczywistych, niemockowanych zależnościach.
 
 ---
 
-## What Real-Path Verification Covers
+## Kiedy stosować ten Playbook
 
-Per `docs/POLICY_MOCKS_AND_REAL_PATHS.md`, the following layers require real-path verification:
+Stosuj, gdy spełniony jest którykolwiek z poniższych warunków:
 
-| Layer | Name | Mock policy |
-|-------|------|-------------|
-| 5 | File system contract tests | mock-restricted |
-| 7 | Golden output regression tests | mock-restricted |
-| 8 | Determinism tests | mock-restricted |
-| 22 | End-to-end slice tests | mock-forbidden |
-| 23 | Database integrity tests | mock-forbidden |
-| 25 | Run reproducibility tests | mock-forbidden |
-| 26 | Evidence completeness tests | mock-forbidden |
-
-For `mock-restricted` layers: at least one full test execution per slice must use real files with no mocking of file I/O or SQLite.
-
-For `mock-forbidden` layers: every execution must use real files and real SQLite. No exceptions.
+- Przygotowujesz się do uznania warstwy testów `mock-restricted` za PASS.
+- Przygotowujesz się do uznania warstwy testów `mock-forbidden` za PASS.
+- Recenzent zażądał dowodów weryfikacji rzeczywistej ścieżki.
+- Przygotowujesz pakiet gotowości do promocji dla G4 lub G5.
+- Manifest uruchomienia wskazuje `trusted = false`, a przyczyną jest naruszenie polityki mocków.
 
 ---
 
-## Step-by-Step Procedure
+## Zakres weryfikacji rzeczywistej ścieżki
 
-### Step 1: Identify the target layer and slice
+Zgodnie z `docs/POLICY_MOCKS_AND_REAL_PATHS.md`, następujące warstwy wymagają weryfikacji rzeczywistej ścieżki:
+
+| Warstwa | Nazwa | Polityka mocków |
+|---------|-------|-----------------|
+| 5 | Testy kontraktów systemu plików | mock-restricted |
+| 7 | Testy regresji złotych danych wyjściowych | mock-restricted |
+| 8 | Testy deterministyczności | mock-restricted |
+| 22 | Testy end-to-end wycinka | mock-forbidden |
+| 23 | Testy integralności bazy danych | mock-forbidden |
+| 25 | Testy odtwarzalności uruchomień | mock-forbidden |
+| 26 | Testy kompletności dowodów | mock-forbidden |
+
+Dla warstw `mock-restricted`: przynajmniej jedno pełne wykonanie testów na wycinek musi używać rzeczywistych plików bez mockowania operacji I/O na plikach ani SQLite.
+
+Dla warstw `mock-forbidden`: każde wykonanie musi używać rzeczywistych plików i rzeczywistego SQLite. Bez wyjątków.
+
+---
+
+## Procedura krok po kroku
+
+### Krok 1: Zidentyfikuj docelową warstwę i wycinek
 
 ```
-Layer: <e.g. Layer 22 — End-to-end slice tests>
-Slice: <e.g. Slice 1 — Ingest>
-Run ID (if verifying a previous run): <run_id>
+Layer: <np. Layer 22 — End-to-end slice tests>
+Slice: <np. Slice 1 — Ingest>
+Run ID (jeśli weryfikujesz poprzednie uruchomienie): <run_id>
 ```
 
-### Step 2: Confirm no mocks are active for the layer
+### Krok 2: Potwierdź brak aktywnych mocków dla warstwy
 
-Check the test files for the target layer:
+Sprawdź pliki testowe dla docelowej warstwy:
 
 ```bash
 grep -r "t.Skip\|mock\|Mock\|stub\|Stub\|FakeDB\|InMemory" \
   <test_file_or_directory>
 ```
 
-Expected: No mock setup for the components being tested. If mocks are found:
-- Check if they are for *external* dependencies only (acceptable for `mock-restricted`).
-- If they wrap SQLite, the file system, or the event log → this is a violation for `mock-forbidden` layers.
-- Do not proceed until mocks are removed or the layer is reclassified.
+Oczekiwany wynik: Brak konfiguracji mocków dla testowanych komponentów. Jeśli znajdziesz mocki:
+- Sprawdź, czy dotyczą wyłącznie *zewnętrznych* zależności (dopuszczalne dla `mock-restricted`).
+- Jeśli owijają SQLite, system plików lub dziennik zdarzeń → jest to naruszenie dla warstw `mock-forbidden`.
+- Nie kontynuuj, dopóki mocki nie zostaną usunięte lub warstwa nie zostanie przeklasyfikowana.
 
-### Step 3: Prepare the real-path test environment
+### Krok 3: Przygotuj środowisko testów rzeczywistej ścieżki
 
 ```bash
 # Create a fresh test directory
@@ -83,12 +83,12 @@ cp -r <repo>/sources/  ./sources/
 <repo>/bin/itdlab --db ./semantic_index.sqlite --log ./events.jsonl ingest run --source ./sources/
 ```
 
-Confirm:
-- `semantic_index.sqlite` is a real file on disk (not `:memory:`).
-- `events.jsonl` is a real file on disk.
-- Sources are real files, not generated stubs.
+Potwierdź:
+- `semantic_index.sqlite` jest rzeczywistym plikiem na dysku (nie `:memory:`).
+- `events.jsonl` jest rzeczywistym plikiem na dysku.
+- Źródła są rzeczywistymi plikami, nie dynamicznie generowanymi zaślepkami.
 
-### Step 4: Run the target layer's tests against real dependencies
+### Krok 4: Uruchom testy docelowej warstwy na rzeczywistych zależnościach
 
 ```bash
 # From repo root
@@ -97,9 +97,9 @@ LOG_PATH=/tmp/itdlab-realpath-test/events.jsonl \
 go test ./... -run <TestPattern> -v 2>&1 | tee /tmp/itdlab-realpath-test/test_output.txt
 ```
 
-### Step 5: Verify the evidence artifacts
+### Krok 5: Zweryfikuj artefakty dowodowe
 
-After the test run:
+Po zakończeniu testów:
 
 ```bash
 # Check that SQLite was actually used (non-empty, not in-memory artefact)
@@ -112,65 +112,65 @@ wc -l /tmp/itdlab-realpath-test/events.jsonl
 ls -lh reports/<run_id>/
 ```
 
-All of the following must be true:
-- [ ] SQLite file exists and is larger than the empty-schema baseline
-- [ ] At least 1 event line in the event log
-- [ ] `run_manifest.json` exists and `evidence.complete = true`
-- [ ] `run_manifest.json` has `trusted = true`
+Wszystkie poniższe warunki muszą być spełnione:
+- [ ] Plik SQLite istnieje i jest większy niż bazowy pusty schemat
+- [ ] Co najmniej 1 wiersz zdarzenia w dzienniku zdarzeń
+- [ ] Plik `run_manifest.json` istnieje i zawiera `evidence.complete = true`
+- [ ] Plik `run_manifest.json` zawiera `trusted = true`
 
-### Step 6: Record the real-path evidence
+### Krok 6: Zapisz dowody weryfikacji rzeczywistej ścieżki
 
-In `reports/<run_id>/`:
+W katalogu `reports/<run_id>/`:
 ```
-real_path_verification.md  — document: layer, slice, test command, result, timestamp
+real_path_verification.md  — zapisz: warstwę, wycinek, polecenie testowe, wynik, znacznik czasu
 ```
 
-Template:
+Szablon:
 ```md
 ## Real-Path Verification Record
 
-- Layer: <layer name>
-- Slice: <slice name>
+- Layer: <nazwa warstwy>
+- Slice: <nazwa wycinka>
 - Run ID: <run_id>
-- Test command: `<full command>`
-- SQLite path: <path>
-- Event log path: <path>
+- Test command: `<pełne polecenie>`
+- SQLite path: <ścieżka>
+- Event log path: <ścieżka>
 - Result: PASS / FAIL
-- Verified at: <ISO 8601 datetime>
-- Verified by: <owner>
-- Notes: <any deviations or observations>
+- Verified at: <data/czas ISO 8601>
+- Verified by: <właściciel>
+- Notes: <wszelkie odchylenia lub obserwacje>
 ```
 
 ---
 
-## Stop Conditions
+## Warunki zatrzymania
 
-Stop and do not record a PASS if any of the following is true:
+Zatrzymaj się i nie rejestruj wyniku PASS, jeśli spełniony jest którykolwiek z poniższych warunków:
 
-- Any `mock-forbidden` component was wrapped in a mock or stub.
-- SQLite was opened as `:memory:`.
-- Source files were generated dynamically without review.
-- The test environment was shared with a running development server that could modify state.
-- `run_manifest.json` shows `trusted = false`.
-
----
-
-## Recovery if Real-Path Verification Fails
-
-1. Record the failure in the run manifest (`evidence.complete = false` if artifacts are missing, or `trusted = false` if a policy violation was found).
-2. Register a skip in `docs/SKIP_REGISTER.md` if the layer cannot be executed for a documented reason.
-3. Do not proceed to G4/G5 gate evaluation until the layer is passing or a Category 1/2 skip is registered with owner and review date.
+- Jakikolwiek komponent `mock-forbidden` był owinięty w mocka lub zaślepkę.
+- SQLite było otwarte jako `:memory:`.
+- Pliki źródłowe były generowane dynamicznie bez weryfikacji.
+- Środowisko testowe było współdzielone z działającym serwerem deweloperskim, który mógł modyfikować stan.
+- Plik `run_manifest.json` wskazuje `trusted = false`.
 
 ---
 
-## Internal references
+## Odzyskiwanie po niepowodzeniu weryfikacji rzeczywistej ścieżki
+
+1. Zapisz niepowodzenie w manifeście uruchomienia (`evidence.complete = false` jeśli brakuje artefaktów, lub `trusted = false` jeśli wykryto naruszenie polityki).
+2. Zarejestruj pominięcie w `docs/SKIP_REGISTER.md`, jeśli warstwa nie może zostać wykonana z udokumentowanego powodu.
+3. Nie przechodź do oceny bram G4/G5 dopóki warstwa nie przechodzi lub nie jest zarejestrowane pominięcie kategorii 1/2 z właścicielem i datą przeglądu.
+
+---
+
+## Odwołania wewnętrzne
 - `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
 - `docs/TESTING_STANDARD.md`
 - `docs/TEST_CATALOG.md`
 - `docs/EVIDENCE_MODEL.md`
 - `docs/SKIP_REGISTER.md`
 
-## Review metadata
-- Owner: project team
-- Status: draft
-- Last reviewed: 2026-03-30
+## Metadane przeglądu
+- Właściciel: zespół projektu
+- Status: szkic
+- Ostatni przegląd: 2026-03-30

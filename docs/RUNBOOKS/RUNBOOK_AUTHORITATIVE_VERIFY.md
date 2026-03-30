@@ -1,42 +1,42 @@
 # Runbook: Authoritative Verify
 
 **Version:** 1.0  
-**Trigger:** Manual or scheduled authoritative verification of the repository's assurance state  
-**Scope:** Full repo — all capability slices present at time of execution
+**Trigger:** Ręczna lub zaplanowana autoryzowana weryfikacja stanu pewności repozytorium  
+**Scope:** Całe repo — wszystkie wycinki funkcjonalności obecne w chwili wykonania
 
 ---
 
-## Purpose
+## Cel
 
-This runbook describes how to perform a full authoritative verification of the `itdlab` repository. It answers the question:
+Ten runbook opisuje sposób przeprowadzenia pełnej autoryzowanej weryfikacji repozytorium `itdlab`. Odpowiada na pytanie:
 
-> "At this point in time, what is the actual, evidenced state of quality in this repository?"
+> „W tej chwili, jaki jest rzeczywisty, udokumentowany stan jakości tego repozytorium?"
 
-Authoritative verify is not a development check. It is the formal procedure used before:
-- a promotion decision to the stable repository,
-- a gate status report for G4 or G5,
-- a milestone sign-off,
-- an external audit or review.
-
----
-
-## Prerequisites
-
-Before starting, confirm all of the following:
-
-- [ ] Latest code is committed and pushed to `origin/main`
-- [ ] `git status` shows no uncommitted changes
-- [ ] `bin/itdlab` is built from the current HEAD (`make build`)
-- [ ] SQLite is at the latest schema version (`make db-init` or verify `schema_version = 1`)
-- [ ] No other `itdlab` run is in progress (check `runs/events.jsonl` for an open run)
-- [ ] Disk space available: ≥ 500 MB free on the partition hosting `reports/`
-- [ ] The operator has reviewed `docs/SKIP_REGISTER.md` for any active skips
+Autoryzowana weryfikacja nie jest sprawdzeniem deweloperskim. Jest to formalna procedura stosowana przed:
+- decyzją o promowaniu do stabilnego repozytorium,
+- raportem statusu bramek dla G4 lub G5,
+- zatwierdzeniem kamienia milowego,
+- zewnętrznym audytem lub przeglądem.
 
 ---
 
-## Procedure
+## Wymagania wstępne
 
-### Phase 1: Environment snapshot
+Przed rozpoczęciem potwierdź wszystkie poniższe punkty:
+
+- [ ] Najnowszy kod jest zatwierdzony i wypchnięty do `origin/main`
+- [ ] `git status` nie wykazuje niezatwierdzonych zmian
+- [ ] `bin/itdlab` jest zbudowane z bieżącego HEAD (`make build`)
+- [ ] SQLite jest w najnowszej wersji schematu (`make db-init` lub sprawdź `schema_version = 1`)
+- [ ] Żadne inne uruchomienie `itdlab` nie jest w toku (sprawdź `runs/events.jsonl` pod kątem otwartego uruchomienia)
+- [ ] Dostępne miejsce na dysku: ≥ 500 MB wolnego miejsca na partycji zawierającej `reports/`
+- [ ] Operator zapoznał się z `docs/SKIP_REGISTER.md` w poszukiwaniu aktywnych pominięć
+
+---
+
+## Procedura
+
+### Faza 1: Migawka środowiska
 
 ```bash
 # Record binary version
@@ -61,58 +61,58 @@ git log --oneline -1
   echo "Binary: $(./bin/itdlab --version 2>/dev/null || echo 'see help')"
   sqlite3 db/semantic_index.sqlite "SELECT 'Schema version: ' || version FROM schema_version;"
   echo "Event log lines before: $(wc -l < runs/events.jsonl)"
-} > /tmp/av_snapshot.txt
-cat /tmp/av_snapshot.txt
+} > av_snapshot.txt
+cat av_snapshot.txt
 ```
 
-### Phase 2: Re-ingest from sources
+### Faza 2: Ponowny ingest ze źródeł
 
-A clean ingest verifies that the current sources can be fully ingested without error.
+Czysty ingest weryfikuje, że bieżące źródła mogą być w pełni przetworzone bez błędów.
 
 ```bash
 ./bin/itdlab ingest run --source sources/
 ```
 
-Stop if exit code ≠ 0. Record the `run_id` from stdout.
+Zatrzymaj się, jeśli kod wyjścia ≠ 0. Zapisz `run_id` ze standardowego wyjścia.
 
 ```bash
 AV_INGEST_RUN_ID=<run_id from above>
 ```
 
-### Phase 3: Normalize
+### Faza 3: Normalizacja
 
 ```bash
 ./bin/itdlab normalize apply
 ```
 
-Stop if exit code ≠ 0. Record the `run_id`.
+Zatrzymaj się, jeśli kod wyjścia ≠ 0. Zapisz `run_id`.
 
 ```bash
 AV_NORMALIZE_RUN_ID=<run_id from above>
 ```
 
-### Phase 4: Check evidence completeness for each run
+### Faza 4: Sprawdzenie kompletności dowodów dla każdego uruchomienia
 
 ```bash
 ./bin/itdlab audit evidence $AV_INGEST_RUN_ID
 ./bin/itdlab audit evidence $AV_NORMALIZE_RUN_ID
 ```
 
-Expected: both report `trusted = true` and `evidence.complete = true`.
+Oczekiwany wynik: oba raporty zwracają `trusted = true` oraz `evidence.complete = true`.
 
-If either reports `trusted = false`, stop and investigate before proceeding.
+Jeśli którekolwiek zwraca `trusted = false`, zatrzymaj się i zbadaj sprawę przed kontynuacją.
 
-### Phase 5: Run all tests
+### Faza 5: Uruchomienie wszystkich testów
 
 ```bash
-make test 2>&1 | tee /tmp/av_test_output.txt
+make test 2>&1 | tee av_test_output.txt
 ```
 
-Record exit code. A non-zero exit code means at least one test failed. Do not proceed to gate evaluation if tests fail.
+Zapisz kod wyjścia. Niezerowy kod wyjścia oznacza, że co najmniej jeden test nie przeszedł. Nie kontynuuj oceny bramek, jeśli testy nie przeszły.
 
-### Phase 6: Evaluate quality gates
+### Faza 6: Ocena bramek jakości
 
-For each gate (G1 through G5, as applicable to completed capability slices):
+Dla każdej bramki (G1 do G5, stosownie do ukończonych wycinków funkcjonalności):
 
 ```bash
 # Check gate status — currently manual; see docs/QUALITY_GATES.md
@@ -122,7 +122,7 @@ For each gate (G1 through G5, as applicable to completed capability slices):
 # - evidence artifacts exist
 ```
 
-Summarise gate status:
+Podsumowanie statusu bramek:
 
 | Gate | Status | Notes |
 |------|--------|-------|
@@ -132,28 +132,28 @@ Summarise gate status:
 | G4 | PASS / degraded / FAIL / not-evaluated | |
 | G5 | PASS / degraded / FAIL / not-evaluated | |
 
-### Phase 7: Check active skips
+### Faza 7: Sprawdzenie aktywnych pominięć
 
 ```bash
 cat docs/SKIP_REGISTER.md
 ```
 
-For each active skip:
-- Confirm it has a valid Skip ID, owner, and review date.
-- Confirm it is reflected in the gate status table above.
-- Confirm no Category 3 or Category 4 skip is present without approval record.
+Dla każdego aktywnego pominięcia:
+- Potwierdź, że posiada prawidłowy identyfikator Skip ID, właściciela i datę przeglądu.
+- Potwierdź, że jest uwzględnione w powyższej tabeli statusu bramek.
+- Potwierdź, że żadne pominięcie Kategorii 3 lub Kategorii 4 nie jest obecne bez zapisu o zatwierdzeniu.
 
-### Phase 8: Write authoritative verify report
+### Faza 8: Sporządzenie raportu autoryzowanej weryfikacji
 
 ```bash
 REPORT_DIR="reports/av-$(date -u +%Y%m%d-%H%M%S)"
 mkdir -p $REPORT_DIR
 
 # Copy snapshot
-cp /tmp/av_snapshot.txt $REPORT_DIR/
+cp av_snapshot.txt $REPORT_DIR/
 
 # Copy test output
-cp /tmp/av_test_output.txt $REPORT_DIR/
+cp av_test_output.txt $REPORT_DIR/
 
 # Write gate status
 cat > $REPORT_DIR/gate_status.md << 'EOF'
@@ -185,32 +185,32 @@ echo "Authoritative verify report written to: $REPORT_DIR"
 
 ---
 
-## Stop Conditions
+## Warunki zatrzymania
 
-Stop and record as INCOMPLETE if:
+Zatrzymaj się i zapisz jako NIEKOMPLETNE, jeśli:
 
-- Any capability-slice run exits non-zero without a registered explanation.
-- Any run cited as gate evidence is `trusted = false`.
-- `make test` exits non-zero.
-- Any `mock-forbidden` layer was found to have been executed with mocks.
-- `docs/SKIP_REGISTER.md` contains an unowned or expired skip.
-
----
-
-## Completion Criteria
-
-The authoritative verify is complete and credible when:
-
-- [ ] All runs in Phase 2–3 exited 0 or 2 (no unhandled errors)
-- [ ] All cited runs are `trusted = true`
-- [ ] All tests passed or all failures are registered in SKIP_REGISTER.md
-- [ ] Gate status table is filled in with supporting run IDs
-- [ ] Report exists in `reports/av-<timestamp>/`
-- [ ] Report is committed: `git add reports/av-<timestamp>/ && git commit -m "audit: authoritative verify <date>"`
+- Jakiekolwiek uruchomienie wycinka funkcjonalności zakończyło się z niezerowym kodem bez zarejestrowanego wyjaśnienia.
+- Jakiekolwiek uruchomienie powołane jako dowód bramki ma `trusted = false`.
+- `make test` zakończył się z niezerowym kodem.
+- Jakakolwiek warstwa `mock-forbidden` została uruchomiona z mockami.
+- `docs/SKIP_REGISTER.md` zawiera pominięcie bez właściciela lub z przeterminowaną datą.
 
 ---
 
-## Internal references
+## Kryteria ukończenia
+
+Autoryzowana weryfikacja jest kompletna i wiarygodna, gdy:
+
+- [ ] Wszystkie uruchomienia w Fazach 2–3 zakończyły się z kodem 0 lub 2 (brak nieobsłużonych błędów)
+- [ ] Wszystkie powołane uruchomienia mają `trusted = true`
+- [ ] Wszystkie testy przeszły lub wszystkie niepowodzenia są zarejestrowane w SKIP_REGISTER.md
+- [ ] Tabela statusu bramek jest wypełniona z podaniem identyfikatorów uruchomień jako dowodów
+- [ ] Raport istnieje w `reports/av-<timestamp>/`
+- [ ] Raport jest zatwierdzony: `git add reports/av-<timestamp>/ && git commit -m "audit: authoritative verify <date>"`
+
+---
+
+## Odnośniki wewnętrzne
 - `docs/EXECUTION_ASSURANCE_PROGRAM.md`
 - `docs/QUALITY_GATES.md`
 - `docs/QUALITY_GATES_POLICY.md`
@@ -218,7 +218,7 @@ The authoritative verify is complete and credible when:
 - `docs/SKIP_REGISTER.md`
 - `docs/PLAYBOOKS/PLAYBOOK_REAL_PATH_VERIFICATION.md`
 
-## Review metadata
+## Metadane przeglądu
 - Owner: project team
 - Status: draft
 - Last reviewed: 2026-03-30

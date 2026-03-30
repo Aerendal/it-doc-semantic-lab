@@ -1,14 +1,14 @@
 # Skip Register
 
-This is the living register of active test-layer skips and approved exceptions.
+To jest żywy rejestr aktywnych pominięć warstw testowych i zatwierdzonych wyjątków.
 
-Maintained per `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
+Utrzymywany zgodnie z `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
 
-A skip entered here does **not** make it disappear — it makes it visible, owned, and reviewable.
+Wpis pominięcia tutaj **nie** sprawia, że znika — sprawia, że jest widoczne, ma właściciela i podlega przeglądowi.
 
 ---
 
-## Active Skips
+## Aktywne pominięcia
 
 | Skip ID | Layer | Category | Owner | Registered | Review Date | Gate Impact | Reason |
 |---------|-------|----------|-------|------------|-------------|-------------|--------|
@@ -16,33 +16,33 @@ A skip entered here does **not** make it disappear — it makes it visible, owne
 
 ---
 
-## Skip ID Format
+## Format Skip ID
 
-`SKIP-<YYYY>-<NNN>` — e.g. `SKIP-2026-001`
+`SKIP-<YYYY>-<NNN>` — np. `SKIP-2026-001`
 
-Increment `NNN` sequentially per year. Do not reuse IDs.
+Zwiększaj `NNN` kolejno w ramach roku. Nie używaj ponownie identyfikatorów.
 
 ---
 
-## How to Register a Skip
+## Jak zarejestrować pominięcie
 
-1. Add a row to the **Active Skips** table above.
-2. Record the Skip ID in the relevant test file as a comment:
+1. Dodaj wiersz do tabeli **Aktywne pominięcia** powyżej.
+2. Zapisz Skip ID w odpowiednim pliku testowym jako komentarz:
    ```go
    // SKIP-2026-001: Layer 28 skipped; no performance baseline yet. Review: 2026-09-01.
    t.Skip("SKIP-2026-001")
    ```
-3. Record the skip in any run manifest for runs affected by it (`skips` array in `run_manifest.json`).
-4. Add to **Closed Skips** when the skip is resolved or expired.
+3. Zapisz pominięcie w manifeście przebiegu dla przebiegów nim objętych (tablica `skips` w `run_manifest.json`).
+4. Przenieś do **Zamknięte pominięcia**, gdy pominięcie zostanie rozwiązane lub wygaśnie.
 
 ---
 
-## Mandatory Fields
+## Wymagane pola
 
-Per `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`:
+Zgodnie z `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`:
 
-| Field | Required for Category |
-|-------|-----------------------|
+| Pole | Wymagane dla kategorii |
+|------|------------------------|
 | Skip ID | 1, 2, 3, 4 |
 | Layer | 1, 2, 3, 4 |
 | Category (1/2/3/4) | 1, 2, 3, 4 |
@@ -52,11 +52,11 @@ Per `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`:
 | Gate impact | 1, 2, 3, 4 |
 | Reason | 1, 2, 3, 4 |
 
-Category 3 (skip on blocked critical path) and Category 4 (permanent skip) require approval before registration.
+Kategoria 3 (pominięcie na zablokowanej ścieżce krytycznej) i Kategoria 4 (pominięcie stałe) wymagają zatwierdzenia przed rejestracją.
 
 ---
 
-## Closed Skips
+## Zamknięte pominięcia
 
 | Skip ID | Layer | Closed Date | Resolution |
 |---------|-------|-------------|------------|
@@ -64,12 +64,12 @@ Category 3 (skip on blocked critical path) and Category 4 (permanent skip) requi
 
 ---
 
-## Internal references
+## Odniesienia wewnętrzne
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
 - `docs/TESTING_STANDARD.md`
 - `docs/QUALITY_GATES_POLICY.md`
 
-## Review metadata
-- Owner: project team
-- Status: active (living document)
-- Last reviewed: 2026-03-30
+## Metadane przeglądu
+- Właściciel: zespół projektowy
+- Status: aktywny (dokument żywy)
+- Ostatni przegląd: 2026-03-30

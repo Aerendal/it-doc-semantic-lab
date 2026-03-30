@@ -1,51 +1,51 @@
 # Development Plan — it-doc-semantic-lab
 
-## Purpose
-This repository is the semantic research and experimentation lab for the IT-Dokumentacja project.
+## Cel
+To repozytorium jest laboratorium badań semantycznych i eksperymentów dla projektu IT-Dokumentacja.
 
-The stable production repo (IT-Dokumentacja) contains P1.5 capabilities.
-This lab builds the P2→P3 semantic layer.
+Stabilne repozytorium produkcyjne (IT-Dokumentacja) zawiera możliwości P1.5.
+Niniejsze laboratorium buduje warstwę semantyczną P2→P3.
 
-## Layer targets
+## Cele warstw
 
 ### P2 — structural-rule
-- [ ] Document class detector (exp_001)
-- [ ] Section role mapper (exp_002)
-- [ ] Class-role registry (schemas/document_classes.yaml)
-- [ ] Role completeness evaluator
+- [ ] Detektor klasy dokumentu (exp_001)
+- [ ] Maper ról sekcji (exp_002)
+- [ ] Rejestr klas i ról (schemas/document_classes.yaml)
+- [ ] Ewaluator kompletności ról
 
 ### P3 — semantic-role
-- [ ] Gap report generator (exp_003)
-- [ ] Split planner (exp_004)
-- [ ] Content completeness scorer
+- [ ] Generator raportów luk (exp_003)
+- [ ] Planer podziału (exp_004)
+- [ ] Skorer kompletności treści
 
-## Corpus first cases
+## Pierwsze przypadki korpusu
 1. nlp_algorithm_architecture_spec → case_001 (morfologia_polska_algorytmy) ✓
-2. project_architecture_concept → case_001 (to be added)
-3. compliance_procedure → case_001 (to be added)
+2. project_architecture_concept → case_001 (do dodania)
+3. compliance_procedure → case_001 (do dodania)
 
-## Execution-assurance dependency
+## Zależność od zapewnienia wykonania
 
-P2→P3 implementation work is not treated as complete only when code exists.
+Praca implementacyjna P2→P3 nie jest traktowana jako zakończona jedynie z powodu istnienia kodu.
 
-Each capability slice should be evaluated against:
-- quality gates,
-- applicable test layers,
-- evidence requirements,
-- real-path vs mocked-path rules,
-- promotion-readiness criteria.
+Każdy wycinek możliwości powinien być oceniany względem:
+- bramek jakości,
+- odpowiednich warstw testowych,
+- wymagań dowodowych,
+- zasad rzeczywistej vs zamockowanej ścieżki,
+- kryteriów gotowości do promocji.
 
-Implementation order should therefore track not only feature completion, but also:
-1. test-layer coverage,
-2. evidence-pack completeness,
-3. gate status,
-4. promotion feasibility to the stable repository.
+Kolejność implementacji powinna zatem śledzić nie tylko ukończenie funkcji, ale również:
+1. pokrycie warstwami testowymi,
+2. kompletność paczki dowodowej,
+3. status bramki,
+4. wykonalność promocji do stabilnego repozytorium.
 
-See: `docs/EXECUTION_ASSURANCE_PROGRAM.md`, `docs/QUALITY_GATES_POLICY.md`, `docs/TESTING_STANDARD.md`.
+Patrz: `docs/EXECUTION_ASSURANCE_PROGRAM.md`, `docs/QUALITY_GATES_POLICY.md`, `docs/TESTING_STANDARD.md`.
 
-## Promotion policy
-Stable components are promoted to IT-Dokumentacja/itdoc/ only when:
-1. Experiment has a gold standard
-2. Experiment passes on all corpus cases
-3. Dry-run/apply/idempotency confirmed
-4. Validation passes on IT-Dokumentacja after integration
+## Polityka promocji
+Stabilne komponenty są promowane do IT-Dokumentacja/itdoc/ tylko wtedy, gdy:
+1. Eksperyment ma wzorzec złoty
+2. Eksperyment przechodzi na wszystkich przypadkach korpusu
+3. Dry-run/apply/idempotency potwierdzone
+4. Walidacja przechodzi w IT-Dokumentacja po integracji

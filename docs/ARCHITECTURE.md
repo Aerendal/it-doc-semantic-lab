@@ -1,39 +1,39 @@
 # Architecture — IT Documentation Semantic Lab
 
-## Overview
+## Przegląd
 
-This repository is the **semantic analysis engine** for the IT-Dokumentacja project.  
-It operates as a Go CLI tool backed by SQLite (source of truth) and a JSONL event log (audit trail).
+To repozytorium jest **silnikiem analizy semantycznej** dla projektu IT-Dokumentacja.  
+Działa jako narzędzie CLI w Go, wspierane przez SQLite (źródło prawdy) i dziennik zdarzeń JSONL (ścieżka audytowa).
 
-The stable reference repository (`IT-Dokumentacja`) receives only **promoted, stable metadata** exported from here.
-
----
-
-## Design Principles
-
-| Principle | Expression |
-|-----------|-----------|
-| Local-first | No network dependencies at runtime |
-| Auditable | Every state change is logged to `runs/events.jsonl` |
-| Reproducible | Same input + same run = same output |
-| Incremental | Capability slices, not big-bang layers |
-| Evidence-driven | Every run produces a verifiable evidence pack |
+Stabilne repozytorium referencyjne (`IT-Dokumentacja`) otrzymuje wyłącznie **promowane, stabilne metadane** eksportowane stąd.
 
 ---
 
-## Technology Stack
+## Zasady projektowe
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| Language | Go | Static binary, strong stdlib, easy testing |
-| Database | SQLite (`modernc.org/sqlite`) | Local, no CGO, zero-config |
-| Audit log | JSONL (append-only) | Human-readable, grep-able, append-safe |
-| CLI framework | Cobra | Subcommand tree, flags, help generation |
-| Test tooling | stdlib `testing` + golden files | No external deps |
+| Zasada | Wyraz |
+|--------|-------|
+| Local-first | Brak zależności sieciowych w czasie wykonania |
+| Auditable | Każda zmiana stanu jest logowana do `runs/events.jsonl` |
+| Reproducible | Te same dane wejściowe + ten sam przebieg = te same dane wyjściowe |
+| Incremental | Wycinki możliwości, nie wielkie warstwy naraz |
+| Evidence-driven | Każdy przebieg produkuje weryfikowalną paczkę dowodową |
 
 ---
 
-## Repository Layout
+## Stos technologiczny
+
+| Obszar | Wybór | Uzasadnienie |
+|--------|-------|-------------|
+| Język | Go | Statyczny plik binarny, silna biblioteka standardowa, łatwe testowanie |
+| Baza danych | SQLite (`modernc.org/sqlite`) | Lokalna, bez CGO, zero konfiguracji |
+| Dziennik audytu | JSONL (tylko dopisywanie) | Czytelny dla człowieka, grepowany, bezpieczny dla dopisywania |
+| Framework CLI | Cobra | Drzewo podpoleceń, flagi, generowanie pomocy |
+| Narzędzia testowe | stdlib `testing` + golden files | Brak zewnętrznych zależności |
+
+---
+
+## Struktura repozytorium
 
 ```
 cmd/itdlab/          — CLI entrypoint
@@ -77,33 +77,33 @@ docs/
 
 ---
 
-## Capability Slices
+## Wycinki możliwości
 
-Development follows vertical capability slices, not horizontal layers.
+Rozwój odbywa się według pionowych wycinków możliwości, nie poziomych warstw.
 
-| Slice | Background | Interface | Evidence |
-|-------|-----------|-----------|---------|
-| 1 — Ingest | Markdown parser, SQLite store, event log | `itdlab ingest run`, `itdlab ingest inspect` | Source manifest, parse report |
-| 2 — Normalize | Canonical IDs, dedup, collision detection | `itdlab normalize preview`, `itdlab normalize apply` | Normalization report |
-| 3 — Sections | Section archetypes, role inference | `itdlab sections show`, `itdlab sections explain` | Section map, anomaly report |
-| 4 — Relations | Rule-based inference, cross-doc deps | `itdlab relations show`, `itdlab relations explain` | Relation graph, candidate report |
-| 5 — Authority | Regulatory linkage | `itdlab authority check` | Authority coverage report |
-| 6 — Export | Stable metadata promotion | `itdlab export repo1` | Export manifest |
+| Wycinek | Tło | Interfejs | Dowody |
+|---------|-----|-----------|--------|
+| 1 — Ingest | Parser Markdown, magazyn SQLite, dziennik zdarzeń | `itdlab ingest run`, `itdlab ingest inspect` | Manifest źródłowy, raport parsowania |
+| 2 — Normalize | Kanoniczne ID, deduplikacja, wykrywanie kolizji | `itdlab normalize preview`, `itdlab normalize apply` | Raport normalizacji |
+| 3 — Sections | Archetypy sekcji, wnioskowanie ról | `itdlab sections show`, `itdlab sections explain` | Mapa sekcji, raport anomalii |
+| 4 — Relations | Wnioskowanie oparte na regułach, zależności między dokumentami | `itdlab relations show`, `itdlab relations explain` | Graf relacji, raport kandydatów |
+| 5 — Authority | Powiązania regulacyjne | `itdlab authority check` | Raport pokrycia przez autorytet |
+| 6 — Export | Promocja stabilnych metadanych | `itdlab export repo1` | Manifest eksportu |
 
 ---
 
-## State Model
+## Model stanu
 
 ```
 raw → ingested → normalized → classified → exported
 ```
 
-Each transition is:
-1. Recorded as a row mutation in SQLite
-2. Appended as an event to `runs/events.jsonl`
+Każde przejście jest:
+1. Zapisywane jako mutacja wiersza w SQLite
+2. Dopisywane jako zdarzenie do `runs/events.jsonl`
 
 ---
 
-## Related Decisions
+## Powiązane decyzje
 
 - [ADR-001: SQLite as source of truth](ADR/ADR-001-sqlite-as-source-of-truth.md)

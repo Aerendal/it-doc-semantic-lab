@@ -1,54 +1,54 @@
 # Playbook: Schema Evolution
 
-## Purpose
+## Cel
 
-Defines the strategy for evolving the SQLite schema without breaking existing data or runs.
-
----
-
-## Principles
-
-1. Schema changes are **always additive** — no column drops, no renames in place
-2. Each schema version has its own DDL file: `db/schema_v<N>.sql`
-3. The `schema_version` table tracks applied versions
-4. Migration tests (Layer 15) must pass before applying any migration
+Definiuje strategię ewolucji schematu SQLite bez przerywania pracy na istniejących danych ani uruchomieniach.
 
 ---
 
-## Adding a New Column
+## Zasady
+
+1. Zmiany schematu są **zawsze addytywne** — brak usuwania kolumn, brak zmiany nazw w miejscu
+2. Każda wersja schematu posiada własny plik DDL: `db/schema_v<N>.sql`
+3. Tabela `schema_version` śledzi zastosowane wersje
+4. Testy migracji (Layer 15) muszą przejść przed zastosowaniem jakiejkolwiek migracji
+
+---
+
+## Dodawanie nowej kolumny
 
 ```sql
--- db/schema_v2.sql (example)
+-- db/schema_v2.sql (przykład)
 ALTER TABLE documents ADD COLUMN confidence REAL NOT NULL DEFAULT 0.0;
 INSERT OR IGNORE INTO schema_version (version, applied_at, description)
 VALUES (2, datetime('now'), 'add confidence column to documents');
 ```
 
-Rules:
-- New columns must have a `DEFAULT` value
-- Never `NOT NULL` without a default on an existing table
-- Add an index if the column will be queried
+Zasady:
+- Nowe kolumny muszą posiadać wartość `DEFAULT`
+- Nigdy `NOT NULL` bez wartości domyślnej w istniejącej tabeli
+- Dodaj indeks, jeśli kolumna będzie używana w zapytaniach
 
 ---
 
-## Adding a New Table
+## Dodawanie nowej tabeli
 
-Add the new `CREATE TABLE IF NOT EXISTS` statement to the new schema file. New tables do not require data migration.
-
----
-
-## Migration Process
-
-1. Write `db/schema_v<N>.sql`
-2. Write a migration test (Layer 15) using a pre-migration SQLite snapshot
-3. Run `make test` — verify migration test passes
-4. Apply: `sqlite3 db/semantic_index.sqlite < db/schema_v<N>.sql`
-5. Update `internal/adapters/sqlite/schema.go` to include the new DDL
+Dodaj nową instrukcję `CREATE TABLE IF NOT EXISTS` do nowego pliku schematu. Nowe tabele nie wymagają migracji danych.
 
 ---
 
-## What Never to Do
+## Proces migracji
 
-- Do not `DROP COLUMN` or `DROP TABLE` on existing schema versions
-- Do not rename columns (use a new column + deprecated old one)
-- Do not change `CHECK` constraints on existing columns in place
+1. Napisz `db/schema_v<N>.sql`
+2. Napisz test migracji (Layer 15) używając migawki SQLite sprzed migracji
+3. Uruchom `make test` — zweryfikuj, że test migracji przechodzi
+4. Zastosuj: `sqlite3 db/semantic_index.sqlite < db/schema_v<N>.sql`
+5. Zaktualizuj `internal/adapters/sqlite/schema.go` tak, aby zawierał nowe DDL
+
+---
+
+## Czego nigdy nie robić
+
+- Nie używaj `DROP COLUMN` ani `DROP TABLE` na istniejących wersjach schematu
+- Nie zmieniaj nazw kolumn (użyj nowej kolumny + zdeprecjonuj starą)
+- Nie zmieniaj ograniczeń `CHECK` na istniejących kolumnach w miejscu

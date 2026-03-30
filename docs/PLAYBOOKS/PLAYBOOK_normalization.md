@@ -1,56 +1,56 @@
 # Playbook: Normalization
 
-## Purpose
+## Cel
 
-Defines the strategy for normalizing document names and assigning canonical IDs.
+Definiuje strategię normalizacji nazw dokumentów i przypisywania kanonicznych identyfikatorów.
 
 ---
 
-## Normalization Rules
+## Zasady normalizacji
 
-### 1. Canonical ID Generation
+### 1. Generowanie kanonicznego identyfikatora
 
-A canonical ID is derived from the raw document name by:
-1. Lowercasing all characters
-2. Replacing spaces, hyphens, and slashes with underscores
-3. Stripping non-alphanumeric characters (except underscores)
-4. Collapsing multiple underscores into one
+Kanoniczny identyfikator jest wyprowadzany z surowej nazwy dokumentu przez:
+1. Zamianę wszystkich znaków na małe litery
+2. Zastąpienie spacji, myślników i ukośników podkreślnikami
+3. Usunięcie znaków niealfanumerycznych (z wyjątkiem podkreślników)
+4. Zwinięcie wielu podkreślników w jeden
 
-Examples:
+Przykłady:
 - `"Risk Register"` → `risk_register`
 - `"IT Security Policy v2"` → `it_security_policy_v2`
 - `"Change Management Process (CMP)"` → `change_management_process_cmp`
 
-### 2. Collision Handling
+### 2. Obsługa kolizji
 
-If two different documents produce the same canonical ID:
-1. A collision entry is written to SQLite
-2. The run is NOT blocked — normalization continues
-3. Gate 3 blocks promotion until all collisions are resolved
+Jeśli dwa różne dokumenty generują ten sam kanoniczny identyfikator:
+1. Wpis o kolizji jest zapisywany do SQLite
+2. Uruchomienie NIE jest blokowane — normalizacja jest kontynuowana
+3. Gate 3 blokuje promocję do czasu rozwiązania wszystkich kolizji
 
-Resolution options:
-- Rename one of the documents
-- Add a distinguishing suffix (e.g., `_v2`, `_legacy`)
-- Merge if the documents are truly duplicates
+Opcje rozwiązania:
+- Zmień nazwę jednego z dokumentów
+- Dodaj odróżniający sufiks (np. `_v2`, `_legacy`)
+- Połącz dokumenty, jeśli są rzeczywiście duplikatami
 
-### 3. Alias Registration
+### 3. Rejestracja aliasów
 
-A document may have multiple known aliases. Aliases:
-- Are stored in the `normalizations` table
-- Always resolve to exactly one canonical ID
-- Cannot be shared between canonical IDs
+Dokument może mieć wiele znanych aliasów. Aliasy:
+- Są przechowywane w tabeli `normalizations`
+- Zawsze wskazują dokładnie jeden kanoniczny identyfikator
+- Nie mogą być współdzielone między kanonicznymi identyfikatorami
 
 ---
 
-## Preview Before Apply
+## Podgląd przed zastosowaniem
 
-Always preview before applying:
+Zawsze wykonaj podgląd przed zastosowaniem zmian:
 
 ```
 itdlab normalize preview
 ```
 
-Review the `normalization_report.json` output. Only apply when all changes are intentional:
+Przejrzyj dane wyjściowe `normalization_report.json`. Zastosuj zmiany tylko wtedy, gdy wszystkie modyfikacje są zamierzone:
 
 ```
 itdlab normalize apply
@@ -58,8 +58,8 @@ itdlab normalize apply
 
 ---
 
-## When to Re-Normalize
+## Kiedy ponownie przeprowadzić normalizację
 
-- After adding new source documents
-- After renaming source files
-- After changing normalization rules (requires migration test — Layer 15)
+- Po dodaniu nowych dokumentów źródłowych
+- Po zmianie nazw plików źródłowych
+- Po zmianie reguł normalizacji (wymaga testu migracji — Layer 15)

@@ -1,83 +1,83 @@
 # Evidence Model
 
-Every completed run of `itdlab` must produce a verifiable **evidence pack** — a set of artifacts that allow independent audit of what happened, why, and with what result.
+Każde ukończone uruchomienie `itdlab` musi produkować weryfikowalny **evidence pack** — zestaw artefaktów umożliwiających niezależny audyt tego, co się stało, dlaczego i z jakim wynikiem.
 
-A run without a complete evidence pack is treated as an **INCOMPLETE run** regardless of exit code.
-
----
-
-## Principles
-
-1. Evidence must be produced by the run itself — not manually assembled after the fact.
-2. Evidence must be sufficient for an independent reviewer to reconstruct what happened without talking to the author.
-3. Evidence must survive the session — artifacts written only to memory or temporary directories do not count.
-4. A green exit code without evidence is not a credible result.
+Uruchomienie bez kompletnego evidence pack jest traktowane jako **INCOMPLETE run** niezależnie od kodu wyjścia.
 
 ---
 
-## Required Artifacts per Run
+## Zasady
 
-Every run of any `itdlab` command must produce **all** of the following:
-
-| # | Artifact | Location | Format | Description |
-|---|----------|----------|--------|-------------|
-| 1 | Run record | SQLite `runs` table | row | start time, finish time, exit code, status |
-| 2 | Event log entries | `runs/events.jsonl` | JSONL | All events appended during this run |
-| 3 | Command output | `reports/<run_id>/stdout.txt` | text | Captured CLI stdout |
-| 4 | Exit code | Run record in SQLite | integer | 0 = success, non-zero = failure |
-| 5 | SQLite checksum | `reports/<run_id>/db_checksum.txt` | text | SHA-256 of DB file after run |
-| 6 | Run summary | `reports/<run_id>/summary.md` | Markdown | Human-readable run summary |
-
-Artifacts 1–6 are mandatory for **all** runs.
+1. Dowody muszą być produkowane przez samo uruchomienie — nie montowane ręcznie po fakcie.
+2. Dowody muszą być wystarczające dla niezależnego recenzenta, aby odtworzyć przebieg zdarzeń bez kontaktu z autorem.
+3. Dowody muszą przetrwać sesję — artefakty zapisane wyłącznie w pamięci lub katalogach tymczasowych nie są liczone.
+4. Zielony kod wyjścia bez dowodów nie jest wiarygodnym wynikiem.
 
 ---
 
-## Command-Specific Required Artifacts
+## Wymagane artefakty na uruchomienie
 
-In addition to the universal set, each command requires its own artifacts:
+Każde uruchomienie dowolnego polecenia `itdlab` musi produkować **wszystkie** poniższe artefakty:
 
-| Command | Required Artifact | Location |
-|---------|-------------------|----------|
-| `ingest run` | Source manifest | `reports/<run_id>/source_manifest.json` |
-| `ingest run` | Parse report | `reports/<run_id>/parse_report.json` |
-| `normalize apply` | Normalization report | `reports/<run_id>/normalization_report.json` |
-| `normalize apply` | Collision report | `reports/<run_id>/collision_report.json` |
-| `relations show` | Relation graph | `reports/<run_id>/relation_graph.json` |
-| `authority check` | Authority coverage report | `reports/<run_id>/authority_coverage_report.json` |
-| `export repo1` | Export manifest | `reports/<run_id>/export_manifest.json` |
-| `export repo1` | Gate pass report | `reports/<run_id>/gate_pass_report.json` |
-| `audit evidence` | Evidence manifest | `reports/<run_id>/evidence_manifest.json` |
+| # | Artefakt | Lokalizacja | Format | Opis |
+|---|----------|-------------|--------|------|
+| 1 | Rekord uruchomienia | tabela SQLite `runs` | wiersz | czas rozpoczęcia, czas zakończenia, kod wyjścia, status |
+| 2 | Wpisy dziennika zdarzeń | `runs/events.jsonl` | JSONL | Wszystkie zdarzenia dołączone podczas tego uruchomienia |
+| 3 | Wyjście polecenia | `reports/<run_id>/stdout.txt` | tekst | Przechwycone wyjście standardowe CLI |
+| 4 | Kod wyjścia | Rekord uruchomienia w SQLite | liczba całkowita | 0 = sukces, wartość niezerowa = błąd |
+| 5 | Suma kontrolna SQLite | `reports/<run_id>/db_checksum.txt` | tekst | SHA-256 pliku bazy danych po uruchomieniu |
+| 6 | Podsumowanie uruchomienia | `reports/<run_id>/summary.md` | Markdown | Czytelne dla człowieka podsumowanie uruchomienia |
 
----
-
-## INCOMPLETE Run Definition
-
-A run is declared **INCOMPLETE** if any of the following is true:
-
-1. The universal artifact set (items 1–6) is not fully present.
-2. A command-specific required artifact is missing.
-3. Any artifact exists but is empty (zero bytes).
-4. The SQLite `runs` table has no row for this `run_id`.
-5. The event log has no entries for this `run_id`.
-6. The run record has `status = 'running'` and the process is no longer active.
-
-An INCOMPLETE run may not be cited as evidence for gate evaluation.
+Artefakty 1–6 są obowiązkowe dla **wszystkich** uruchomień.
 
 ---
 
-## Evidence Pack Completeness Check
+## Artefakty wymagane dla poszczególnych poleceń
 
-Evidence pack completeness is verified by:
-- **Layer 27** (Evidence Pack Tests) in `docs/TEST_CATALOG.md`
-- **Gate 5** in `docs/QUALITY_GATES.md`
+Poza zestawem uniwersalnym każde polecenie wymaga własnych artefaktów:
 
-The `itdlab audit evidence <run_id>` command performs the completeness check and exits non-zero if any artifact is missing.
+| Polecenie | Wymagany artefakt | Lokalizacja |
+|-----------|-------------------|-------------|
+| `ingest run` | Manifest źródłowy | `reports/<run_id>/source_manifest.json` |
+| `ingest run` | Raport parsowania | `reports/<run_id>/parse_report.json` |
+| `normalize apply` | Raport normalizacji | `reports/<run_id>/normalization_report.json` |
+| `normalize apply` | Raport kolizji | `reports/<run_id>/collision_report.json` |
+| `relations show` | Graf relacji | `reports/<run_id>/relation_graph.json` |
+| `authority check` | Raport pokrycia autorytetu | `reports/<run_id>/authority_coverage_report.json` |
+| `export repo1` | Manifest eksportu | `reports/<run_id>/export_manifest.json` |
+| `export repo1` | Raport przejścia bramki | `reports/<run_id>/gate_pass_report.json` |
+| `audit evidence` | Manifest dowodów | `reports/<run_id>/evidence_manifest.json` |
 
 ---
 
-## Event Log Format
+## Definicja uruchomienia INCOMPLETE
 
-Each line in `runs/events.jsonl` is a JSON object. The log is append-only and must never be modified after a line is written.
+Uruchomienie jest uznawane za **INCOMPLETE** jeśli zachodzi którykolwiek z poniższych warunków:
+
+1. Uniwersalny zestaw artefaktów (pozycje 1–6) nie jest w pełni obecny.
+2. Brakuje artefaktu wymaganego przez dane polecenie.
+3. Jakiś artefakt istnieje, ale jest pusty (zero bajtów).
+4. Tabela SQLite `runs` nie zawiera wiersza dla tego `run_id`.
+5. Dziennik zdarzeń nie zawiera wpisów dla tego `run_id`.
+6. Rekord uruchomienia ma `status = 'running'`, a proces nie jest już aktywny.
+
+Uruchomienie INCOMPLETE nie może być cytowane jako dowód przy ocenie bramki.
+
+---
+
+## Weryfikacja kompletności evidence pack
+
+Kompletność evidence pack jest weryfikowana przez:
+- **Layer 27** (Evidence Pack Tests) w `docs/TEST_CATALOG.md`
+- **Gate 5** w `docs/QUALITY_GATES.md`
+
+Polecenie `itdlab audit evidence <run_id>` przeprowadza weryfikację kompletności i kończy się kodem niezerowym, jeśli brakuje jakiegoś artefaktu.
+
+---
+
+## Format dziennika zdarzeń
+
+Każda linia w `runs/events.jsonl` jest obiektem JSON. Dziennik jest wyłącznie dołączany i nie może być modyfikowany po zapisaniu wiersza.
 
 ```json
 {
@@ -93,48 +93,48 @@ Each line in `runs/events.jsonl` is a JSON object. The log is append-only and mu
 }
 ```
 
-**Required fields:** `ts`, `run_id`, `step`, `entity`, `entity_id`, `action`
+**Wymagane pola:** `ts`, `run_id`, `step`, `entity`, `entity_id`, `action`
 
-**Forbidden operations:** delete, modify, truncate, re-order existing lines
+**Zabronione operacje:** usuwanie, modyfikacja, obcinanie, zmiana kolejności istniejących linii
 
 ---
 
-## SQLite Checksum
+## Suma kontrolna SQLite
 
-The checksum artifact (`db_checksum.txt`) must contain:
+Artefakt sumy kontrolnej (`db_checksum.txt`) musi zawierać:
 
 ```
 sha256:<hex>  db/semantic_index.sqlite
 ```
 
-It is produced immediately after the last write of the run, before process exit. It covers the full database file including WAL-merged state.
+Jest produkowana bezpośrednio po ostatnim zapisie uruchomienia, przed zakończeniem procesu. Obejmuje pełny plik bazy danych, włącznie ze stanem scalonym WAL.
 
 ---
 
-## Run Summary Format
+## Format podsumowania uruchomienia
 
-`reports/<run_id>/summary.md` must contain at minimum:
+`reports/<run_id>/summary.md` musi zawierać co najmniej:
 
 - Run ID
-- Command invoked (with flags)
-- Start and finish times
-- Exit code
-- Number of entities processed (by type)
-- Any errors or warnings encountered
-- Gate status (pass / fail / not evaluated)
+- Wywołane polecenie (z flagami)
+- Czasy rozpoczęcia i zakończenia
+- Kod wyjścia
+- Liczba przetworzonych encji (według typu)
+- Napotkane błędy lub ostrzeżenia
+- Status bramki (pass / fail / not evaluated)
 
 ---
 
-## Reproducibility Guarantee
+## Gwarancja odtwarzalności
 
-Given the same source files and the same run configuration, the evidence pack (including SQLite state and event log entries) must be functionally identical between runs.
+Przy tych samych plikach źródłowych i tej samej konfiguracji uruchomienia, evidence pack (w tym stan SQLite i wpisy dziennika zdarzeń) musi być funkcjonalnie identyczny między uruchomieniami.
 
-"Functionally identical" means:
-- same row counts in all tables,
-- same canonical IDs assigned,
-- same relations inferred,
-- same gate outcomes.
+„Funkcjonalnie identyczny" oznacza:
+- ta sama liczba wierszy we wszystkich tabelach,
+- te same przypisane kanoniczne identyfikatory,
+- te same wywnioskowane relacje,
+- te same wyniki bramek.
 
-Timestamps and run IDs are exempt from the reproducibility requirement.
+Znaczniki czasu i identyfikatory uruchomień są zwolnione z wymogu odtwarzalności.
 
-Any function that breaks the functional reproducibility guarantee must be explicitly marked in code with a comment: `// non-deterministic: <reason>`.
+Każda funkcja, która narusza gwarancję funkcjonalnej odtwarzalności, musi być wyraźnie oznaczona w kodzie komentarzem: `// non-deterministic: <reason>`.

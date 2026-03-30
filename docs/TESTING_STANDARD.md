@@ -1,26 +1,26 @@
 # Testing Standard
 
-## Philosophy
+## Filozofia
 
-Testing in this repository is **evidence-driven**: every test produces or validates an artifact that can be independently audited. Tests are not just regression checks — they are part of the run evidence model.
-
----
-
-## Non-Goals
-
-This standard does **not** claim or assume:
-
-1. **Failure-free execution.** The repository assumes failures will occur. The obligation is that they must be visible, not that they must not happen.
-2. **Green = ready.** A passing test suite without a complete evidence pack is not a credible result.
-3. **Green = promotable.** Feature code may be experimentally green without satisfying Gate 4 + evidence requirements for promotion to the stable repository.
-4. **Any test = strong evidence.** A mock-based test of a mock-forbidden layer does not count toward gate credibility.
-5. **Coverage = completeness.** High line coverage does not replace layer coverage. A layer not executed is a gap, regardless of line coverage metrics.
+Testowanie w tym repozytorium jest **oparte na dowodach**: każdy test produkuje lub waliduje artefakt, który może być niezależnie skontrolowany. Testy to nie tylko sprawdzenia regresji — są częścią modelu dowodów przebiegu.
 
 ---
 
-## 6 Levels, 30 Layers
+## Cele negatywne
 
-Tests are organized into 6 levels. Each level addresses a distinct class of failure risk.
+Standard ten **nie** zakłada ani nie twierdzi, że:
+
+1. **Wykonanie bez błędów.** Repozytorium zakłada, że błędy będą się zdarzać. Obowiązkiem jest, żeby były widoczne — nie żeby nie występowały.
+2. **Zielono = gotowe.** Przechodzący zestaw testów bez kompletnego pakietu dowodów nie jest wiarygodnym wynikiem.
+3. **Zielono = możliwe do promocji.** Kod funkcjonalności może być eksperymentalnie zielony bez spełnienia wymagań Gate 4 + dowodów potrzebnych do promocji do stabilnego repozytorium.
+4. **Dowolny test = silny dowód.** Test oparty na mockach w warstwie mock-forbidden nie wlicza się do wiarygodności bramy.
+5. **Pokrycie = kompletność.** Wysokie pokrycie linii nie zastępuje pokrycia warstw. Warstwa, która nie została wykonana, jest luką — niezależnie od metryk pokrycia linii.
+
+---
+
+## 6 poziomów, 30 warstw
+
+Testy są zorganizowane w 6 poziomów. Każdy poziom adresuje odrębną klasę ryzyka awarii.
 
 | Level | Name | Layers | Primary Risk Addressed |
 |-------|------|--------|------------------------|
@@ -31,13 +31,13 @@ Tests are organized into 6 levels. Each level addresses a distinct class of fail
 | E | Interface & Run | 21–25 | CLI contract breakage, run state corruption |
 | F | Operational & Audit | 26–30 | Non-reproducibility, missing evidence, gate failures |
 
-Full layer definitions: see [TEST_CATALOG.md](TEST_CATALOG.md).
+Pełne definicje warstw: zob. [TEST_CATALOG.md](TEST_CATALOG.md).
 
 ---
 
-## Mock Policy Summary
+## Podsumowanie polityki mocków
 
-Each layer has an assigned mock policy. See `docs/POLICY_MOCKS_AND_REAL_PATHS.md` for full definitions and the layer-by-layer table.
+Każda warstwa ma przypisaną politykę mocków. Pełne definicje i tabelę według warstw zob. w `docs/POLICY_MOCKS_AND_REAL_PATHS.md`.
 
 | Policy | Meaning |
 |--------|---------|
@@ -45,13 +45,13 @@ Each layer has an assigned mock policy. See `docs/POLICY_MOCKS_AND_REAL_PATHS.md
 | **mock-restricted** | Core I/O (filesystem, SQLite, event log) must use real implementations; clock/random may be mocked |
 | **mock-forbidden** | All primary dependencies must be real; no mocking of filesystem, SQLite, or event log |
 
-Using mocks in a `mock-forbidden` layer invalidates that layer's gate contribution. It must be registered as a skip (Category 3) per `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
+Użycie mocków w warstwie `mock-forbidden` unieważnia wkład tej warstwy do bramy. Musi zostać zarejestrowane jako pominięcie (Kategoria 3) zgodnie z `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
 
 ---
 
-## Skip Policy Summary
+## Podsumowanie polityki pomijania
 
-Each skip must be registered in `docs/SKIP_REGISTER.md`. See `docs/POLICY_SKIPS_AND_EXCEPTIONS.md` for full procedure.
+Każde pominięcie musi być zarejestrowane w `docs/SKIP_REGISTER.md`. Pełną procedurę zob. w `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
 
 | Category | Condition | Gate impact |
 |----------|-----------|-------------|
@@ -60,7 +60,7 @@ Each skip must be registered in `docs/SKIP_REGISTER.md`. See `docs/POLICY_SKIPS_
 | 3 | Layer on critical gate path, approved with owner + review date | Gate marked `degraded` — not promotable |
 | 4 / unregistered | Forbidden layers, or any skip without registration | Automatic gate failure |
 
-**Forbidden skips (never permitted under any condition):**
+**Zabronione pominięcia (nigdy niedozwolone pod żadnym warunkiem):**
 - Evidence pack production (Layer 27)
 - Exit code recording
 - Event log append
@@ -68,90 +68,90 @@ Each skip must be registered in `docs/SKIP_REGISTER.md`. See `docs/POLICY_SKIPS_
 
 ---
 
-## Quality Gates
+## Bramy jakości
 
-A run **must not** be promoted until:
+Przebieg **nie może** być promowany dopóki:
 
-- All Level A tests pass (input contract validated)
-- All Level B golden tests match
-- Level C: zero unresolved collisions
-- Level D: all relations have non-empty explanation
-- Level E: CLI exit codes conform to contract
-- Level F: evidence pack is complete
+- Wszystkie testy Level A przechodzą (kontrakt wejściowy zwalidowany)
+- Wszystkie złote testy Level B są zgodne
+- Level C: zero nierozwiązanych kolizji
+- Level D: wszystkie relacje mają niepuste wyjaśnienie
+- Level E: kody wyjścia CLI zgodne z kontraktem
+- Level F: pakiet dowodów jest kompletny
 
-Full gate definitions: see [QUALITY_GATES.md](QUALITY_GATES.md) and [QUALITY_GATES_POLICY.md](QUALITY_GATES_POLICY.md).
-
----
-
-## Promotion Expectation
-
-A feature may be **experimentally green** (local test pass, working prototype) without being **promotable**.
-
-For promotion to the stable repository (`IT-Dokumentacja`), a feature must satisfy:
-1. Gate 4 (semantic consistency) fully passed — no `degraded` gates.
-2. Evidence pack complete for the promotion run.
-3. No Category 3 or Category 4 skips on any layer that feeds the promotion gate.
-4. Golden files are current and reviewed.
-5. `itdlab export repo1` exits with code 0.
-
-A feature that is experimentally green but not promotable should be documented as such in `docs/DEVELOPMENT_PLAN.md`.
+Pełne definicje bram: zob. [QUALITY_GATES.md](QUALITY_GATES.md) i [QUALITY_GATES_POLICY.md](QUALITY_GATES_POLICY.md).
 
 ---
 
-## Review Standard
+## Warunki promocji
 
-A reviewer must be able to independently verify a run result **without talking to the author**.
+Funkcjonalność może być **eksperymentalnie zielona** (lokalne przejście testów, działający prototyp) bez bycia **możliwą do promocji**.
 
-Specifically, a review is credible when:
-- the evidence pack for the run is complete (`itdlab audit evidence <run_id>` exits 0),
-- the event log entries for the run are present and parseable,
-- the golden files are current and match the run output,
-- any skips or degraded modes are registered in `docs/SKIP_REGISTER.md`,
-- the gate status is explicitly recorded (PASS / degraded / FAIL), not implied.
+Do promocji do stabilnego repozytorium (`IT-Dokumentacja`) funkcjonalność musi spełniać:
+1. Gate 4 (spójność semantyczna) w pełni zaliczony — brak bram `degraded`.
+2. Pakiet dowodów kompletny dla przebiegu promocji.
+3. Brak pomięć Kategorii 3 lub Kategorii 4 w żadnej warstwie zasilającej bramę promocji.
+4. Złote pliki są aktualne i zrecenzowane.
+5. `itdlab export repo1` kończy się kodem 0.
 
-A review that is not independently reproducible from the evidence pack is not a credible approval.
-
----
-
-## Test Types
-
-### Unit tests
-- Package-level, in `_test.go` files alongside source
-- No I/O, no filesystem
-- Must be deterministic
-
-### Fixture tests
-- Use files from `internal/testkit/fixtures/`
-- Input is a known file → verify exact output
-
-### Golden tests
-- Compare output to files in `internal/testkit/golden/`
-- Update with `go test ./... -update` when golden intentionally changes
-- Golden file changes must be reviewed in PR diff
-
-### Integration tests
-- In `internal/testkit/` or `_integration_test.go` files
-- Require real SQLite and event log
-- Skipped with `-short` flag
-
-### Contract tests
-- Verify CLI flag contracts and exit codes
-- Run as part of standard test suite
+Funkcjonalność, która jest eksperymentalnie zielona, ale niemożliwa do promocji, powinna być udokumentowana jako taka w `docs/DEVELOPMENT_PLAN.md`.
 
 ---
 
-## Conventions
+## Standard przeglądu
 
-- Test file names: `<subject>_test.go`
-- Fixture file names: `<subject>_<case>.md` / `.json`
-- Golden file names: `<test_name>.golden`
-- Run `make test-short` to skip integration tests
-- Run `make test` for full suite
+Recenzent musi być w stanie niezależnie zweryfikować wynik przebiegu **bez rozmowy z autorem**.
+
+Konkretnie, przegląd jest wiarygodny gdy:
+- pakiet dowodów dla przebiegu jest kompletny (`itdlab audit evidence <run_id>` kończy się z kodem 0),
+- wpisy w dzienniku zdarzeń dla przebiegu są obecne i możliwe do przetworzenia,
+- złote pliki są aktualne i zgodne z wynikiem przebiegu,
+- wszelkie pominięcia lub tryby zdegradowane są zarejestrowane w `docs/SKIP_REGISTER.md`,
+- status bramy jest jawnie odnotowany (PASS / degraded / FAIL), a nie domniemany.
+
+Przegląd, który nie jest niezależnie reprodukowalny na podstawie pakietu dowodów, nie jest wiarygodnym zatwierdzeniem.
 
 ---
 
-## Determinism Requirement
+## Typy testów
 
-Any function that produces output used in tests **must** produce identical output for identical input. Non-determinism is a test failure.
+### Testy jednostkowe
+- Na poziomie pakietu, w plikach `_test.go` obok kodu źródłowego
+- Bez I/O, bez systemu plików
+- Muszą być deterministyczne
 
-Non-deterministic functions (e.g., UUID generators, timestamp producers) must be injectable and replaced with deterministic fakes in tests. They must be marked in code with: `// non-deterministic: <reason>`.
+### Testy z plikami wzorcowymi (fixture tests)
+- Używają plików z `internal/testkit/fixtures/`
+- Wejście to znany plik → weryfikacja dokładnego wyjścia
+
+### Testy złotego pliku (golden tests)
+- Porównują wyjście z plikami w `internal/testkit/golden/`
+- Aktualizuj poleceniem `go test ./... -update` gdy złoty plik celowo się zmienia
+- Zmiany w złotych plikach muszą być recenzowane w diff PR
+
+### Testy integracyjne
+- W `internal/testkit/` lub plikach `_integration_test.go`
+- Wymagają prawdziwego SQLite i dziennika zdarzeń
+- Pomijane z flagą `-short`
+
+### Testy kontraktowe
+- Weryfikują kontrakty flag CLI i kody wyjścia
+- Uruchamiane jako część standardowego zestawu testów
+
+---
+
+## Konwencje
+
+- Nazwy plików testów: `<subject>_test.go`
+- Nazwy plików wzorcowych: `<subject>_<case>.md` / `.json`
+- Nazwy złotych plików: `<test_name>.golden`
+- Uruchom `make test-short` aby pominąć testy integracyjne
+- Uruchom `make test` dla pełnego zestawu
+
+---
+
+## Wymóg determinizmu
+
+Każda funkcja produkująca wyjście używane w testach **musi** zwracać identyczne wyjście dla identycznego wejścia. Niedeterminizm jest błędem testu.
+
+Funkcje niedeterministyczne (np. generatory UUID, producenci znaczników czasu) muszą być wstrzykiwalne i zastępowane deterministycznymi atrapami w testach. Muszą być oznaczone w kodzie adnotacją: `// non-deterministic: <reason>`.

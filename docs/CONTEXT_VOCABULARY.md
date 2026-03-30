@@ -1,147 +1,147 @@
 # Context Vocabulary
 
-This document defines the canonical meaning of terms used across all policy, testing, evidence, and gate documents in this repository. When a term appears in any document in `docs/`, its meaning is the one defined here unless the using document explicitly overrides it and states the override.
+Ten dokument definiuje kanoniczne znaczenie terminów używanych we wszystkich dokumentach dotyczących polityki, testowania, dowodów i bramek w tym repozytorium. Gdy termin pojawia się w jakimkolwiek dokumencie w `docs/`, jego znaczenie jest takie jak tu zdefiniowane, chyba że dokument używający explicite je nadpisuje i stwierdza to nadpisanie.
 
 ---
 
-## Core Concepts
+## Pojęcia podstawowe
 
 ### Run
-A single invocation of the `itdlab` CLI that produces a traceable, evidence-backed state transition. A run:
-- has a unique `run_id`,
-- begins with a start record in SQLite,
-- ends with a finished record in SQLite,
-- appends events to the JSONL event log throughout,
-- produces an evidence pack on completion.
+Pojedyncze wywołanie CLI `itdlab`, które produkuje dającą się prześledzić, opartą na dowodach tranzycję stanu. Przebieg:
+- ma unikalny `run_id`,
+- zaczyna się rekordem startowym w SQLite,
+- kończy się rekordem zakończenia w SQLite,
+- przez cały czas dołącza zdarzenia do dziennika zdarzeń JSONL,
+- przy zakończeniu produkuje pakiet dowodowy.
 
-A process invocation that does not meet these criteria is not a run — it is an untracked execution.
+Wywołanie procesu, które nie spełnia tych kryteriów, nie jest przebiegiem — jest nieśledzonym wykonaniem.
 
 ### Trusted run
-A run that satisfies all of the following:
-1. Evidence pack is complete (see `docs/EVIDENCE_MODEL.md`).
-2. All required test layers for the run's command were executed (no unregistered skips).
-3. Mock-forbidden layers were not executed with mocks.
-4. Gate status is recorded as `PASS` or `degraded` (not implied or absent).
+Przebieg spełniający wszystkie poniższe warunki:
+1. Pakiet dowodowy jest kompletny (zob. `docs/EVIDENCE_MODEL.md`).
+2. Wszystkie wymagane warstwy testowe dla polecenia przebiegu zostały wykonane (brak niezarejestrowanych pomijań).
+3. Warstwy `mock-forbidden` nie zostały wykonane z mockami.
+4. Status bramki jest zapisany jako `PASS` lub `degraded` (nie domniemany ani nieobecny).
 
-A trusted run may be cited as evidence in gate evaluation or promotion decisions.
+Trusted run może być przytaczany jako dowód w ocenie bramki lub decyzjach o promocji.
 
 ### Untrusted run
-Any run that does not meet the trusted run criteria. An untrusted run:
-- may not be cited as gate evidence,
-- may not be used to justify promotion,
-- must not be reported as `PASS` without qualification.
+Każdy przebieg, który nie spełnia kryteriów trusted run. Untrusted run:
+- nie może być przytaczany jako dowód bramki,
+- nie może być używany do uzasadnienia promocji,
+- nie może być raportowany jako `PASS` bez zastrzeżeń.
 
-Untrusted runs are not prohibited. They are permitted for exploration and debugging. The distinction matters only when gate or promotion decisions are being made.
+Untrusted runs nie są zabronione. Są dozwolone do eksploracji i debugowania. Rozróżnienie ma znaczenie wyłącznie przy podejmowaniu decyzji dotyczących bramek lub promocji.
 
 ### Evidence pack
-The set of artifacts produced by a run that enables independent audit. Defined in full in `docs/EVIDENCE_MODEL.md`. An evidence pack is either **complete** or **incomplete** — no partial credit.
+Zestaw artefaktów produkowanych przez przebieg, umożliwiający niezależny audyt. Zdefiniowany w pełni w `docs/EVIDENCE_MODEL.md`. Pakiet dowodowy jest albo **kompletny**, albo **niekompletny** — bez ocen pośrednich.
 
 ### INCOMPLETE run
-A run whose evidence pack is incomplete. Defined by six conditions in `docs/EVIDENCE_MODEL.md`. An INCOMPLETE run may not be cited as evidence for any gate.
+Przebieg, którego pakiet dowodowy jest niekompletny. Zdefiniowany przez sześć warunków w `docs/EVIDENCE_MODEL.md`. INCOMPLETE run nie może być przytaczany jako dowód dla żadnej bramki.
 
 ---
 
-## Gate Concepts
+## Pojęcia bramek
 
 ### Quality gate
-A named, explicit blocking condition that must be satisfied before work may proceed to the next stage. Gates are defined in `docs/QUALITY_GATES.md` and enforced per `docs/QUALITY_GATES_POLICY.md`.
+Nazwany, explicite blokujący warunek, który musi być spełniony, zanim praca może przejść do następnego etapu. Bramki są zdefiniowane w `docs/QUALITY_GATES.md` i egzekwowane zgodnie z `docs/QUALITY_GATES_POLICY.md`.
 
 ### Gate status
-One of three values:
-- `PASS` — all conditions satisfied, evidence complete, no unregistered skips on critical layers.
-- `degraded` — conditions partially satisfied; at least one Category 3 skip is active on a critical-path layer, or a mock-restricted layer lacks real-path verification.
-- `FAIL` — at least one blocking condition not met, or a Category 4 / unregistered skip is present.
+Jedna z trzech wartości:
+- `PASS` — wszystkie warunki spełnione, dowody kompletne, brak niezarejestrowanych pomijań na warstwach krytycznych.
+- `degraded` — warunki częściowo spełnione; co najmniej jedno pomijanie Kategorii 3 jest aktywne na warstwie ścieżki krytycznej lub warstwa `mock-restricted` nie ma weryfikacji ścieżką rzeczywistą.
+- `FAIL` — co najmniej jeden warunek blokujący niespełniony lub obecne jest pomijanie Kategorii 4 / niezarejestrowane.
 
-A gate with status `degraded` blocks promotion but does not block continued development.
+Bramka ze statusem `degraded` blokuje promocję, lecz nie blokuje dalszego wytwarzania.
 
 ### Critical path (gate)
-A test layer is on the critical path for a gate if its PASS / FAIL result directly determines the gate's outcome. Defined per gate in `docs/TEST_CATALOG.md` (Blocking gate field).
+Warstwa testowa jest na ścieżce krytycznej bramki, jeśli jej wynik PASS / FAIL bezpośrednio determinuje wynik bramki. Zdefiniowana per bramka w `docs/TEST_CATALOG.md` (pole Blocking gate).
 
 ### Credible green
-A gate result of `PASS` that is independently verifiable from the evidence pack without author involvement. See `docs/TESTING_STANDARD.md` for the full definition.
+Wynik bramki `PASS`, który jest niezależnie weryfikowalny z pakietu dowodowego bez udziału autora. Pełna definicja w `docs/TESTING_STANDARD.md`.
 
 ---
 
-## Test Concepts
+## Pojęcia testowe
 
 ### Layer
-A named, scoped test concern. There are 30 layers organized in 6 levels (A–F). Each layer has a defined goal, input, artifact, PASS criterion, blocking gate, mock policy, and evidence strength. Defined in `docs/TEST_CATALOG.md`.
+Nazwany, ograniczony obszar troski testowej. Istnieje 30 warstw zorganizowanych w 6 poziomów (A–F). Każda warstwa ma zdefiniowany cel, dane wejściowe, artefakt, kryterium PASS, blokującą bramkę, politykę mocków i siłę dowodową. Zdefiniowane w `docs/TEST_CATALOG.md`.
 
 ### Level
-A grouping of layers addressing a common class of failure risk (e.g., Level A = contract & input, Level F = operational & audit).
+Grupowanie warstw adresujących wspólną klasę ryzyka awarii (np. Level A = kontrakt i wejście, Level F = operacje i audyt).
 
 ### Mock policy
-The rule governing what test doubles may be used in a given layer. Three values:
-- `mock-allowed` — test doubles permitted for all dependencies.
-- `mock-restricted` — core I/O paths must use real implementations; clock/random may be mocked.
-- `mock-forbidden` — all primary dependencies must be real.
+Zasada regulująca, jakie test double mogą być używane w danej warstwie. Trzy wartości:
+- `mock-allowed` — test double dozwolone dla wszystkich zależności.
+- `mock-restricted` — podstawowe ścieżki I/O muszą używać rzeczywistych implementacji; clock/random może być mockowany.
+- `mock-forbidden` — wszystkie podstawowe zależności muszą być rzeczywiste.
 
-Defined in full in `docs/POLICY_MOCKS_AND_REAL_PATHS.md`.
+Zdefiniowana w pełni w `docs/POLICY_MOCKS_AND_REAL_PATHS.md`.
 
 ### Real-path verification
-A test execution in which input is a real file from `internal/testkit/fixtures/` or `sources/`, SQLite writes go to a real disk file, and event log appends go to a real JSONL file. Defined in `docs/POLICY_MOCKS_AND_REAL_PATHS.md`.
+Wykonanie testu, w którym dane wejściowe to rzeczywisty plik z `internal/testkit/fixtures/` lub `sources/`, zapisy SQLite trafiają do rzeczywistego pliku na dysku, a dołączenia do dziennika zdarzeń trafiają do rzeczywistego pliku JSONL. Zdefiniowana w `docs/POLICY_MOCKS_AND_REAL_PATHS.md`.
 
 ### Fixture
-A known-good input file stored in `internal/testkit/fixtures/`. Fixtures are real files, independently reviewed, and versioned in git. They are not auto-generated by the code under test.
+Znany dobry plik wejściowy przechowywany w `internal/testkit/fixtures/`. Fixtures to rzeczywiste pliki, niezależnie przeglądane i wersjonowane w git. Nie są auto-generowane przez testowany kod.
 
 ### Golden file
-A known-correct expected output stored in `internal/testkit/golden/`. Updated intentionally with `go test ./... -update` and reviewed in the PR diff before merge.
+Znane poprawne oczekiwane dane wyjściowe przechowywane w `internal/testkit/golden/`. Aktualizowane celowo za pomocą `go test ./... -update` i przeglądane w diff PR przed scaleniem.
 
 ### Evidence strength
-A per-layer rating of how strongly a passing result supports gate credibility. Four values:
-- `low` — unit-level; supports understanding but not gate decisions alone.
-- `medium` — fixture or integration-level; contributes to gate credibility.
-- `high` — integration with real I/O; strongly supports gate decisions.
-- `promotion-critical` — required for a credible promotable result; absence blocks promotion.
+Ocena per warstwa tego, jak mocno wynik zaliczający wspiera wiarygodność bramki. Cztery wartości:
+- `low` — poziom jednostkowy; wspiera rozumienie, lecz nie decyzje bramek samodzielnie.
+- `medium` — poziom fixture lub integracyjny; przyczynia się do wiarygodności bramki.
+- `high` — integracja z rzeczywistym I/O; mocno wspiera decyzje bramek.
+- `promotion-critical` — wymagane dla wiarygodnego wyniku nadającego się do promocji; brak blokuje promocję.
 
 ---
 
-## Skip and Exception Concepts
+## Pojęcia pomijań i wyjątków
 
 ### Skip
-A registered decision to not execute a test layer for a specific run or period. Skips are classified into four categories (1–4) defined in `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
+Zarejestrowana decyzja o niewykonaniu warstwy testowej dla konkretnego przebiegu lub okresu. Pomijania są klasyfikowane do czterech kategorii (1–4) zdefiniowanych w `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
 
 ### Unregistered skip
-Any test layer not executed without a corresponding entry in `docs/SKIP_REGISTER.md`. Treated as Category 4 (automatic gate failure).
+Każda warstwa testowa niewykonana bez odpowiadającego wpisu w `docs/SKIP_REGISTER.md`. Traktowane jako Kategoria 4 (automatyczne niepowodzenie bramki).
 
 ### Forbidden skip
-A skip of a Category 4 item. Never permitted. Results in automatic gate failure for all active gates in the run.
+Pomijanie elementu Kategorii 4. Nigdy niedozwolone. Skutkuje automatycznym niepowodzeniem bramki dla wszystkich aktywnych bramek w przebiegu.
 
 ### Expired skip
-A skip whose `review_date` has passed without renewal. Treated as Category 4 from the day after expiry.
+Pomijanie, którego `review_date` minęła bez odnowienia. Traktowane jako Kategoria 4 od dnia po wygaśnięciu.
 
 ### Exception
-Synonym for a Category 3 skip — a skip that is approved, documented, and time-bounded, but which places the affected gate in `degraded` status.
+Synonim pomijania Kategorii 3 — pomijanie, które jest zatwierdzone, udokumentowane i ograniczone czasowo, lecz które stawia bramkę, której dotyczy, w statusie `degraded`.
 
 ---
 
-## Promotion Concepts
+## Pojęcia promocji
 
 ### Promotion
-The act of copying stable, validated metadata from this experimental repository to the stable reference repository (`IT-Dokumentacja`). Requires Gate 5 `PASS`, complete evidence pack, and a successful `itdlab export repo1` exit code 0.
+Akt kopiowania stabilnych, zwalidowanych metadanych z tego repozytorium eksperymentalnego do stabilnego repozytorium referencyjnego (`IT-Dokumentacja`). Wymaga Gate 5 `PASS`, kompletnego pakietu dowodowego i pomyślnego kodu wyjścia 0 polecenia `itdlab export repo1`.
 
 ### Promotion-ready
-A run result that satisfies all conditions for promotion: G0–G4 `PASS`, no `degraded` gates, complete evidence pack, no Category 3 or 4 skips on critical-path layers.
+Wynik przebiegu spełniający wszystkie warunki promocji: G0–G4 `PASS`, brak bramek `degraded`, kompletny pakiet dowodowy, brak pomijań Kategorii 3 lub 4 na warstwach ścieżki krytycznej.
 
 ### Experimentally green
-A feature that passes its test suite locally or in CI but does not yet satisfy promotion criteria. This is a valid intermediate state. It must be recorded in `docs/DEVELOPMENT_PLAN.md` as distinct from promotion-ready.
+Funkcja, która przechodzi zestaw testów lokalnie lub w CI, lecz jeszcze nie spełnia kryteriów promocji. Jest to prawidłowy stan pośredni. Musi być zapisana w `docs/DEVELOPMENT_PLAN.md` jako odrębna od promotion-ready.
 
 ---
 
-## Document Status Terms
+## Terminy statusu dokumentu
 
 ### draft
-Document is being written; not yet reviewed; must not be cited as normative.
+Dokument jest pisany; nie był jeszcze przeglądany; nie może być przytaczany jako normatywny.
 
 ### in-review
-Document is complete and under review; may be used as working reference.
+Dokument jest kompletny i w trakcie przeglądu; może być używany jako robocze odwołanie.
 
 ### approved
-Document has been reviewed and accepted; normative for this repository.
+Dokument został przejrzany i zaakceptowany; normatywny dla tego repozytorium.
 
 ---
 
-## Internal references
+## Odwołania wewnętrzne
 - `docs/EXECUTION_ASSURANCE_PROGRAM.md`
 - `docs/QUALITY_GATES_POLICY.md`
 - `docs/TESTING_STANDARD.md`

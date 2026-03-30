@@ -1,420 +1,420 @@
 # Execution Assurance Program
 
-## Purpose
+## Cel
 
-This document defines the execution-assurance program for the experimental repository.
+Ten dokument definiuje program zapewnienia wykonania dla repozytorium eksperymentalnego.
 
-The goal is not only to add new semantic capabilities, but to build a development and verification system that reduces the risk of:
-- silently skipped tests,
-- unjustified mock-based green runs,
-- incomplete execution paths,
-- undocumented shortcuts,
-- regressions hidden behind weak evidence,
-- architecture drift between the lab repository and the stable repository.
+Celem nie jest wyłącznie dodawanie nowych możliwości semantycznych, lecz budowa systemu wytwarzania i weryfikacji, który redukuje ryzyko:
+- cicho pominiętych testów,
+- nieuzasadnionych zielonych przebiegów opartych na mockach,
+- niekompletnych ścieżek wykonania,
+- nieudokumentowanych skrótów,
+- regresji ukrytych za słabymi dowodami,
+- dryfu architektonicznego między repozytorium laboratoryjnym a repozytorium stabilnym.
 
-This program is designed for an **auditable experimental repository**.  
-The repository may remain experimental, but the execution model, evidence model, and test discipline must be explicit and reviewable.
-
----
-
-## Scope
-
-The program applies to:
-- source ingestion,
-- normalization,
-- document classification,
-- section-role mapping,
-- relation inference,
-- authority alignment,
-- export/promotion to the stable repository,
-- CLI workflows,
-- run manifests,
-- evidence packs,
-- test design and test execution.
+Program jest przeznaczony dla **audytowalnego repozytorium eksperymentalnego**.  
+Repozytorium może pozostać eksperymentalne, lecz model wykonania, model dowodowy i dyscyplina testowania muszą być explicite i podlegać przeglądowi.
 
 ---
 
-## Core engineering principles
+## Zakres
 
-1. **No silent skipping**  
-   A skipped test or skipped execution step must be explicit, justified, and reportable.
-
-2. **No hidden mocks for critical paths**  
-   Critical runtime or data-path behavior must not be validated only through mocks when a real-path verification is required.
-
-3. **Evidence before trust**  
-   A green run is not treated as trustworthy unless it produces a manifest, logs, and traceable evidence.
-
-4. **Determinism first**  
-   The same inputs should produce the same outputs or a clearly explained delta.
-
-5. **Promotion only after proof**  
-   Components are promoted to the stable repository only after satisfying defined technical and evidence gates.
-
-6. **Experimentation is allowed, but not undocumented improvisation**  
-   Every important deviation, assumption, or simplification must be documented.
+Program dotyczy:
+- ingestion źródeł,
+- normalizacji,
+- klasyfikacji dokumentów,
+- mapowania ról sekcji,
+- wnioskowania relacji,
+- wyrównania autorytetów,
+- eksportu/promocji do repozytorium stabilnego,
+- przepływów CLI,
+- manifestów przebiegów,
+- pakietów dowodowych,
+- projektowania i wykonywania testów.
 
 ---
 
-# Program structure
+## Podstawowe zasady inżynieryjne
 
-The execution-assurance program is divided into **4 phases** and **10 implementation stages**.
+1. **Brak cichego pomijania**  
+   Pominięty test lub pominięty krok wykonania musi być explicite, uzasadniony i dający się zaraportować.
 
-## Phase A — foundations
-Stages 1–3 define the rules of execution and the evidence contract.
+2. **Brak ukrytych mocków dla ścieżek krytycznych**  
+   Krytyczne zachowanie w czasie wykonania lub na ścieżce danych nie może być weryfikowane wyłącznie przez mocki, gdy wymagana jest weryfikacja ścieżki rzeczywistej.
 
-## Phase B — defensive mechanics
-Stages 4–6 build mechanisms that prevent weak validation practices.
+3. **Dowód przed zaufaniem**  
+   Zielony przebieg nie jest traktowany jako wiarygodny, jeśli nie produkuje manifestu, logów i dających się prześledzić dowodów.
 
-## Phase C — enforcement and operations
-Stages 7–9 connect rules with tooling, documentation, and audit evidence.
+4. **Determinizm przede wszystkim**  
+   Te same dane wejściowe powinny dawać te same dane wyjściowe lub jasno wyjaśnioną deltę.
 
-## Phase D — rollout and hardening
-Stage 10 integrates the program into normal repository work.
+5. **Promocja wyłącznie po udowodnieniu**  
+   Komponenty są promowane do repozytorium stabilnego wyłącznie po spełnieniu zdefiniowanych technicznych bramek dowodowych.
+
+6. **Eksperymentowanie jest dozwolone, ale nie nieudokumentowana improwizacja**  
+   Każde istotne odchylenie, założenie lub uproszczenie musi być udokumentowane.
 
 ---
 
-# 10 implementation stages
+# Struktura programu
 
-## Stage 1 — Gate model and enforcement policy
+Program zapewnienia wykonania jest podzielony na **4 fazy** i **10 etapów implementacji**.
 
-### Objective
-Define what is allowed, forbidden, and conditionally allowed in repository execution and testing.
+## Faza A — fundamenty
+Etapy 1–3 definiują zasady wykonania i kontrakt dowodowy.
 
-### Inputs
-- current repository structure,
-- current testing workflow,
-- current experiment plan,
-- promotion policy to the stable repository.
+## Faza B — mechanizmy obronne
+Etapy 4–6 budują mechanizmy zapobiegające słabym praktykom walidacji.
 
-### Outputs
-- gate model,
-- policy for skips,
-- policy for mocks/fakes/stubs,
-- policy for evidence generation,
-- policy for promotion decisions.
+## Faza C — egzekwowanie i operacje
+Etapy 7–9 łączą zasady z narzędziami, dokumentacją i dowodami audytowymi.
 
-### Required artifacts
+## Faza D — wdrożenie i utwardzanie
+Etap 10 integruje program z codzienną pracą w repozytorium.
+
+---
+
+# 10 etapów implementacji
+
+## Etap 1 — Model bramek i polityka egzekwowania
+
+### Cel
+Zdefiniować, co jest dozwolone, zakazane i warunkowo dozwolone w wykonaniu i testowaniu repozytorium.
+
+### Dane wejściowe
+- aktualna struktura repozytorium,
+- aktualny przepływ testowania,
+- aktualny plan eksperymentu,
+- polityka promocji do repozytorium stabilnego.
+
+### Dane wyjściowe
+- model bramek,
+- polityka pomijania,
+- polityka mocków/fake'ów/stubów,
+- polityka generowania dowodów,
+- polityka decyzji o promocji.
+
+### Wymagane artefakty
 - `docs/QUALITY_GATES.md`
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
 - `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
 
-### Closure criteria
-- forbidden and allowed patterns are explicit,
-- repository can classify a run as valid / invalid / incomplete,
-- critical-path definition exists.
+### Kryteria zamknięcia
+- zakazane i dozwolone wzorce są explicite,
+- repozytorium może klasyfikować przebieg jako prawidłowy / nieprawidłowy / niekompletny,
+- definicja ścieżki krytycznej istnieje.
 
 ---
 
-## Stage 2 — Test-layer catalog and risk mapping
+## Etap 2 — Katalog warstw testowych i mapowanie ryzyka
 
-### Objective
-Define the full map of test layers and what each one is supposed to detect.
+### Cel
+Zdefiniować pełną mapę warstw testowych i co każda z nich ma wykrywać.
 
-### Inputs
-- semantic pipeline goals,
-- known failure modes,
-- planned relation model,
-- planned ingest / normalization / export flows.
+### Dane wejściowe
+- cele potoku semantycznego,
+- znane tryby awarii,
+- planowany model relacji,
+- planowane przepływy ingestion / normalizacji / eksportu.
 
-### Outputs
-- test-layer catalog,
-- risk-to-test mapping,
-- justification for each test layer.
+### Dane wyjściowe
+- katalog warstw testowych,
+- mapowanie ryzyk na testy,
+- uzasadnienie dla każdej warstwy testowej.
 
-### Required artifacts
+### Wymagane artefakty
 - `docs/TESTING_STANDARD.md`
 - `docs/TEST_CATALOG.md`
 - `docs/RISK_TO_TEST_MATRIX.md`
 
-### Closure criteria
-- each test layer has a named purpose,
-- each critical risk is mapped to at least one test layer,
-- the repository can explain why a given test class exists.
+### Kryteria zamknięcia
+- każda warstwa testowa ma nazwany cel,
+- każde ryzyko krytyczne jest zmapowane na co najmniej jedną warstwę testową,
+- repozytorium może wyjaśnić, dlaczego dana klasa testów istnieje.
 
 ---
 
-## Stage 3 — Execution contract and evidence model
+## Etap 3 — Kontrakt wykonania i model dowodowy
 
-### Objective
-Define what counts as a real execution run and what evidence must be generated.
+### Cel
+Zdefiniować, co liczy się jako rzeczywisty przebieg wykonania i jakie dowody muszą być generowane.
 
-### Inputs
-- CLI execution model,
-- current reports,
-- intended audit requirements.
+### Dane wejściowe
+- model wykonania CLI,
+- aktualne raporty,
+- zamierzone wymagania audytowe.
 
-### Outputs
-- run manifest schema,
-- evidence pack schema,
-- execution contract.
+### Dane wyjściowe
+- schemat manifestu przebiegu,
+- schemat pakietu dowodowego,
+- kontrakt wykonania.
 
-### Required artifacts
+### Wymagane artefakty
 - `docs/EVIDENCE_MODEL.md`
 - `docs/RUN_MANIFEST_SCHEMA.md`
 - `docs/EXECUTION_CONTRACT.md`
 
-### Closure criteria
-- every meaningful run can generate a manifest,
-- manifests include executed steps, skipped steps, configuration, and outcome,
-- evidence packs are reproducible and reviewable.
+### Kryteria zamknięcia
+- każdy istotny przebieg może wygenerować manifest,
+- manifesty zawierają wykonane kroki, pominięte kroki, konfigurację i wynik,
+- pakiety dowodowe są reprodukowalne i podlegają przeglądowi.
 
 ---
 
-## Stage 4 — Anti-skip mechanisms
+## Etap 4 — Mechanizmy anty-skip
 
-### Objective
-Prevent silent weakening of the test suite through unjustified skips or soft bypasses.
+### Cel
+Zapobiegać cichemu osłabianiu zestawu testów przez nieuzasadnione pomijania lub miękkie obejścia.
 
-### Inputs
-- existing tests,
-- marker usage,
-- current skip/xfail patterns.
+### Dane wejściowe
+- istniejące testy,
+- użycie markerów,
+- aktualne wzorce skip/xfail.
 
-### Outputs
-- skip/xfail linting,
-- skip whitelist policy,
-- delta report for newly introduced skips.
+### Dane wyjściowe
+- lintowanie skip/xfail,
+- polityka listy dozwolonych pomijań,
+- raport delta dla nowo wprowadzonych pomijań.
 
-### Required artifacts
-- test linter rules,
-- skip audit report,
-- exception register.
+### Wymagane artefakty
+- reguły lintera testów,
+- raport audytu pomijań,
+- rejestr wyjątków.
 
-### Closure criteria
-- new skips are visible,
-- unjustified skips fail gates,
-- skip usage can be audited historically.
+### Kryteria zamknięcia
+- nowe pomijania są widoczne,
+- nieuzasadnione pomijania nie przechodzą bramek,
+- użycie pomijań może być audytowane historycznie.
 
 ---
 
-## Stage 5 — Anti-mock mechanisms
+## Etap 5 — Mechanizmy anty-mock
 
-### Objective
-Prevent fake green runs caused by hidden mocking of critical paths.
+### Cel
+Zapobiegać fałszywie zielonym przebiegom powodowanym przez ukryte mockowanie ścieżek krytycznych.
 
-### Inputs
-- current adapters,
-- current test style,
-- critical-path definition from Stage 1.
+### Dane wejściowe
+- aktualne adaptery,
+- aktualny styl testów,
+- definicja ścieżki krytycznej z Etapu 1.
 
-### Outputs
-- mock policy by layer,
-- real-path vs simulated-path classification,
-- detection rules for disallowed patching.
+### Dane wyjściowe
+- polityka mocków per warstwa,
+- klasyfikacja ścieżka rzeczywista vs symulowana,
+- reguły wykrywania niedozwolonego patchowania.
 
-### Required artifacts
+### Wymagane artefakty
 - `docs/POLICY_MOCKS_AND_REAL_PATHS.md`
-- critical-path registry,
-- mock-usage audit report.
+- rejestr ścieżek krytycznych,
+- raport audytu użycia mocków.
 
-### Closure criteria
-- critical paths have explicit mock rules,
-- disallowed mocking is detectable,
-- repository can distinguish real verification from simulated verification.
+### Kryteria zamknięcia
+- ścieżki krytyczne mają explicite reguły dotyczące mocków,
+- niedozwolone mockowanie jest wykrywalne,
+- repozytorium może odróżnić weryfikację rzeczywistą od symulowanej.
 
 ---
 
-## Stage 6 — Deterministic fixtures and real test harness
+## Etap 6 — Deterministyczne fixtures i rzeczywiste środowisko testowe
 
-### Objective
-Create repeatable, audited fixtures and goldens that reduce pressure to “just mock it”.
+### Cel
+Tworzyć powtarzalne, audytowane fixtures i pliki golden, które zmniejszają presję na „po prostu zamockuj to".
 
-### Inputs
-- source corpora,
-- normalized outputs,
-- gold cases,
-- relation candidates,
-- authority references.
+### Dane wejściowe
+- corpora źródłowe,
+- znormalizowane dane wyjściowe,
+- przypadki złote,
+- kandydaci na relacje,
+- referencje autorytetów.
 
-### Outputs
-- deterministic fixtures,
-- golden outputs,
-- negative cases,
-- corruption cases,
-- boundary cases.
+### Dane wyjściowe
+- deterministyczne fixtures,
+- pliki golden,
+- przypadki negatywne,
+- przypadki z korupcją danych,
+- przypadki brzegowe.
 
-### Required artifacts
+### Wymagane artefakty
 - `testdata/fixtures/`
 - `testdata/golden/`
 - `docs/FIXTURE_POLICY.md`
 
-### Closure criteria
-- major flows have stable fixtures,
-- expected outputs are versioned,
-- fixture selection is explicit and reproducible.
+### Kryteria zamknięcia
+- główne przepływy mają stabilne fixtures,
+- oczekiwane dane wyjściowe są wersjonowane,
+- dobór fixtures jest explicite i reprodukowalny.
 
 ---
 
-## Stage 7 — CLI and CI quality gates
+## Etap 7 — Bramki jakości CLI i CI
 
-### Objective
-Connect the assurance model to executable commands and automated gates.
+### Cel
+Połączyć model zapewnienia z wykonywalnymi poleceniami i automatycznymi bramkami.
 
-### Inputs
-- outputs of Stages 1–6,
-- repository CLI design,
-- CI workflow strategy.
+### Dane wejściowe
+- dane wyjściowe Etapów 1–6,
+- projekt CLI repozytorium,
+- strategia przepływu CI.
 
-### Outputs
-- verification commands,
-- gate command(s),
-- CI pipeline integration,
-- fail/warn/pass semantics.
+### Dane wyjściowe
+- polecenia weryfikacji,
+- polecenia bramek,
+- integracja z potokiem CI,
+- semantyka fail/warn/pass.
 
-### Required artifacts
+### Wymagane artefakty
 - `make verify`
 - `make audit-run`
-- CI workflow definitions
-- gate summary report
+- definicje przepływów CI
+- raport podsumowania bramek
 
-### Closure criteria
-- repository can run gate checks consistently,
-- CI reflects real gate status,
-- failures are actionable and interpretable.
+### Kryteria zamknięcia
+- repozytorium może spójnie uruchamiać sprawdzenia bramek,
+- CI odzwierciedla rzeczywisty status bramek,
+- awarie są możliwe do podjęcia działań i interpretowalnych wniosków.
 
 ---
 
-## Stage 8 — Playbooks and runbooks
+## Etap 8 — Playbooks i runbooks
 
-### Objective
-Document how work should be performed, repeated, and audited.
+### Cel
+Dokumentować, jak praca powinna być wykonywana, powtarzana i audytowana.
 
-### Inputs
-- actual implemented workflows,
-- evidence contract,
-- gate model.
+### Dane wejściowe
+- rzeczywiście zaimplementowane przepływy,
+- kontrakt dowodowy,
+- model bramek.
 
-### Outputs
+### Dane wyjściowe
 - playbooks,
 - runbooks,
-- operator procedures,
-- troubleshooting logic.
+- procedury operatorów,
+- logika troubleshootingu.
 
-### Required artifacts
+### Wymagane artefakty
 - `docs/PLAYBOOKS/`
 - `docs/RUNBOOKS/`
 - `docs/TROUBLESHOOTING.md`
 
-### Closure criteria
-- major workflows are documented step by step,
-- a reviewer can reproduce a run without oral explanations,
-- operational ambiguity is reduced.
+### Kryteria zamknięcia
+- główne przepływy są udokumentowane krok po kroku,
+- recenzent może odtworzyć przebieg bez wyjaśnień ustnych,
+- niejednoznaczność operacyjna jest zredukowana.
 
 ---
 
-## Stage 9 — Audit layer and evidence packs
+## Etap 9 — Warstwa audytowa i pakiety dowodowe
 
-### Objective
-Ensure that each important run leaves a verifiable trace.
+### Cel
+Zapewnić, że każdy ważny przebieg pozostawia weryfikowalny ślad.
 
-### Inputs
-- run manifest model,
-- gate execution,
-- fixture and report outputs.
+### Dane wejściowe
+- model manifestu przebiegu,
+- wykonanie bramek,
+- dane wyjściowe fixtures i raportów.
 
-### Outputs
-- evidence packs,
-- run summaries,
-- checksums/fingerprints,
-- audit reports.
+### Dane wyjściowe
+- pakiety dowodowe,
+- podsumowania przebiegów,
+- sumy kontrolne/odciski palca,
+- raporty audytowe.
 
-### Required artifacts
+### Wymagane artefakty
 - `runs/`
 - `reports/`
 - `evidence/`
-- standardized audit summary files
+- ustandaryzowane pliki podsumowań audytowych
 
-### Closure criteria
-- each important run has a reviewable evidence pack,
-- evidence is sufficient to explain PASS/FAIL/WARN,
-- execution traces can be compared across runs.
-
----
-
-## Stage 10 — Rollout and hardening
-
-### Objective
-Apply the assurance system to day-to-day work and close the remaining bypasses.
-
-### Inputs
-- all prior stages,
-- real development usage,
-- observed failure/bypass patterns.
-
-### Outputs
-- hardened gates,
-- reduced bypass surface,
-- stable promotion policy,
-- updated operating discipline.
-
-### Required artifacts
-- rollout checklist,
-- hardening backlog,
-- post-rollout review report.
-
-### Closure criteria
-- the assurance model is used in normal development,
-- bypasses are reduced and visible,
-- promotion to the stable repository is evidence-driven.
+### Kryteria zamknięcia
+- każdy ważny przebieg ma przejrzysty pakiet dowodowy,
+- dowody są wystarczające do wyjaśnienia PASS/FAIL/WARN,
+- ślady wykonania można porównywać między przebiegami.
 
 ---
 
-# 30 test/control layers
+## Etap 10 — Wdrożenie i utwardzanie
 
-The program uses **30 test/control layers**, grouped into 6 levels.
+### Cel
+Zastosować system zapewnienia w codziennej pracy i zamknąć pozostałe obejścia.
 
-## Level A — source and input contract (1–5)
-1. file presence tests  
-2. file readability tests  
-3. encoding tests  
-4. markdown structure tests  
-5. source schema tests
+### Dane wejściowe
+- wszystkie poprzednie etapy,
+- rzeczywiste użycie deweloperskie,
+- zaobserwowane wzorce awarii/obejść.
 
-## Level B — parser and extraction (6–10)
-6. parser unit tests  
-7. fixture parsing tests  
-8. golden extraction tests  
-9. partial corruption tests  
-10. determinism tests
+### Dane wyjściowe
+- utwardzone bramki,
+- zredukowana powierzchnia obejść,
+- stabilna polityka promocji,
+- zaktualizowana dyscyplina operacyjna.
 
-## Level C — normalization and canonical model (11–15)
-11. canonical ID tests  
-12. collision detection tests  
-13. alias resolution tests  
-14. typing tests  
-15. migration tests
+### Wymagane artefakty
+- lista kontrolna wdrożenia,
+- backlog utwardzania,
+- raport przeglądu po wdrożeniu.
 
-## Level D — relations and semantic logic (16–20)
-16. relation rule unit tests  
-17. relation consistency tests  
-18. explainability tests  
-19. cycle / acyclicity tests  
-20. section influence tests
-
-## Level E — interfaces and execution flows (21–25)
-21. CLI contract tests  
-22. end-to-end slice tests  
-23. resume / restart tests  
-24. event log integrity tests  
-25. SQLite materialization tests
-
-## Level F — auditability and release control (26–30)
-26. reproducibility tests  
-27. evidence pack tests  
-28. performance budget tests  
-29. failure-mode tests  
-30. release gate tests
+### Kryteria zamknięcia
+- model zapewnienia jest używany w normalnym wytwarzaniu,
+- obejścia są zredukowane i widoczne,
+- promocja do repozytorium stabilnego jest oparta na dowodach.
 
 ---
 
-# Expected repository documentation
+# 30 warstw testowych/kontrolnych
 
-At minimum, the repository should eventually contain:
+Program używa **30 warstw testowych/kontrolnych**, pogrupowanych w 6 poziomów.
+
+## Level A — kontrakt źródłowy i wejściowy (1–5)
+1. testy obecności plików  
+2. testy czytelności plików  
+3. testy kodowania  
+4. testy struktury markdown  
+5. testy schematu źródłowego
+
+## Level B — parser i ekstrakcja (6–10)
+6. testy jednostkowe parsera  
+7. testy parsowania fixtures  
+8. testy ekstrakcji golden  
+9. testy częściowej korupcji  
+10. testy determinizmu
+
+## Level C — normalizacja i model kanoniczny (11–15)
+11. testy kanonicznego ID  
+12. testy wykrywania kolizji  
+13. testy rozwiązywania aliasów  
+14. testy typowania  
+15. testy migracji
+
+## Level D — relacje i logika semantyczna (16–20)
+16. testy jednostkowe reguł relacji  
+17. testy spójności relacji  
+18. testy wyjaśnialności  
+19. testy cykli / acykliczności  
+20. testy wpływu sekcji
+
+## Level E — interfejsy i przepływy wykonania (21–25)
+21. testy kontraktu CLI  
+22. testy end-to-end slice  
+23. testy resume / restart  
+24. testy integralności dziennika zdarzeń  
+25. testy materializacji SQLite
+
+## Level F — audytowalność i kontrola wydania (26–30)
+26. testy reprodukowalności  
+27. testy pakietów dowodowych  
+28. testy budżetu wydajnościowego  
+29. testy trybów awarii  
+30. testy bramek wydania
+
+---
+
+# Oczekiwana dokumentacja repozytorium
+
+Repozytorium powinno docelowo zawierać co najmniej:
 
 - `docs/QUALITY_GATES.md`
-- `docs/TESTING_STANDARD.md` *(normative)* — testing philosophy, 6 levels, mandatory rules, mock/skip/promotion policies
-- `docs/TEST_CATALOG.md` *(operational)* — 30-layer test catalog with blocking gate, mock policy and evidence strength per layer
+- `docs/TESTING_STANDARD.md` *(normatywny)* — filozofia testowania, 6 poziomów, obowiązkowe zasady, polityki mock/skip/promocji
+- `docs/TEST_CATALOG.md` *(operacyjny)* — 30-warstwowy katalog testów z blokującą bramką, polityką mocków i siłą dowodową per warstwa
 - `docs/EVIDENCE_MODEL.md`
 - `docs/EXECUTION_CONTRACT.md`
 - `docs/PLAYBOOKS/`
@@ -427,42 +427,42 @@ At minimum, the repository should eventually contain:
 
 ---
 
-# Immediate implementation order
+# Zalecana kolejność implementacji
 
-The recommended order of work is:
+Zalecana kolejność prac:
 
-1. Stage 1 — gate model and enforcement policy
-2. Stage 2 — test-layer catalog and risk mapping
-3. Stage 3 — execution contract and evidence model
-4. Stage 4 — anti-skip mechanisms
-5. Stage 5 — anti-mock mechanisms
-6. Stage 6 — deterministic fixtures and real harness
-7. Stage 7 — CLI and CI gates
-8. Stage 8 — playbooks and runbooks
-9. Stage 9 — audit layer and evidence packs
-10. Stage 10 — rollout and hardening
-
----
-
-# Relation to the experimental repository
-
-This program is intended for the **experimental repository**, where semantic capabilities are researched and implemented under controlled conditions.
-
-The stable repository remains the promotion target.  
-The experimental repository is where:
-- new semantic mechanisms are designed,
-- the execution discipline is hardened,
-- evidence models are developed,
-- verification logic is validated before promotion.
+1. Etap 1 — model bramek i polityka egzekwowania
+2. Etap 2 — katalog warstw testowych i mapowanie ryzyka
+3. Etap 3 — kontrakt wykonania i model dowodowy
+4. Etap 4 — mechanizmy anty-skip
+5. Etap 5 — mechanizmy anty-mock
+6. Etap 6 — deterministyczne fixtures i rzeczywiste środowisko testowe
+7. Etap 7 — bramki CLI i CI
+8. Etap 8 — playbooks i runbooks
+9. Etap 9 — warstwa audytowa i pakiety dowodowe
+10. Etap 10 — wdrożenie i utwardzanie
 
 ---
 
-# Final note
+# Relacja do repozytorium eksperymentalnego
 
-The purpose of this program is not to eliminate experimentation.
-The purpose is to ensure that experimentation is:
-- explicit,
-- reviewable,
-- repeatable,
-- evidence-backed,
-- and resistant to silent weakening of quality standards.
+Program jest przeznaczony dla **repozytorium eksperymentalnego**, w którym możliwości semantyczne są badane i implementowane w kontrolowanych warunkach.
+
+Repozytorium stabilne pozostaje celem promocji.  
+Repozytorium eksperymentalne jest miejscem, gdzie:
+- projektowane są nowe mechanizmy semantyczne,
+- utwardzana jest dyscyplina wykonania,
+- rozwijane są modele dowodowe,
+- logika weryfikacji jest walidowana przed promocją.
+
+---
+
+# Uwaga końcowa
+
+Celem tego programu nie jest eliminacja eksperymentowania.
+Celem jest zapewnienie, że eksperymentowanie jest:
+- explicite,
+- podlegające przeglądowi,
+- powtarzalne,
+- oparte na dowodach,
+- i odporne na ciche osłabianie standardów jakości.

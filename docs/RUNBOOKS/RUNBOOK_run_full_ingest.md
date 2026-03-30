@@ -1,57 +1,57 @@
 # Runbook: Run Full Ingest
 
-## Prerequisites
+## Wymagania wstępne
 
-- `bin/itdlab` built (`make build`)
-- `db/semantic_index.sqlite` initialised (`make db-init`)
-- Source files present in `sources/`
+- `bin/itdlab` zbudowane (`make build`)
+- `db/semantic_index.sqlite` zainicjalizowane (`make db-init`)
+- Pliki źródłowe obecne w katalogu `sources/`
 
-## Steps
+## Kroki
 
-### 1. Verify sources exist
+### 1. Sprawdź, czy pliki źródłowe istnieją
 
 ```sh
 ls sources/
 ```
 
-Expected: at least one `.md` file in a subdirectory.
+Oczekiwany wynik: co najmniej jeden plik `.md` w podkatalogu.
 
-### 2. Run ingest
+### 2. Uruchom ingest
 
 ```sh
 ./bin/itdlab ingest run --source sources/
 ```
 
-### 3. Verify event log entries
+### 3. Zweryfikuj wpisy w dzienniku zdarzeń
 
 ```sh
 grep '"step":"ingest"' runs/events.jsonl | wc -l
 ```
 
-Expected: count equals number of ingested files.
+Oczekiwany wynik: liczba równa liczbie przetworzonych plików.
 
-### 4. Inspect a document
+### 4. Sprawdź wybrany dokument
 
 ```sh
 ./bin/itdlab ingest inspect sources/<path-to-file>.md
 ```
 
-### 5. Check database
+### 5. Sprawdź bazę danych
 
 ```sh
 sqlite3 db/semantic_index.sqlite "SELECT count(*) FROM documents;"
 ```
 
-Expected: non-zero row count.
+Oczekiwany wynik: niezerowa liczba wierszy.
 
-### 6. Review parse report
+### 6. Przejrzyj raport parsowania
 
 ```sh
 cat reports/<run_id>/parse_report.json
 ```
 
-## Stop Conditions
+## Warunki zatrzymania
 
-- Exit code non-zero → check `reports/<run_id>/stdout.txt` and event log
-- Zero rows in `documents` table → no `.md` files found; check source path
-- Gate 1 failure → fix source files per `gate_failures.json` and re-run
+- Niezerowy kod wyjścia → sprawdź `reports/<run_id>/stdout.txt` i dziennik zdarzeń
+- Zero wierszy w tabeli `documents` → nie znaleziono plików `.md`; sprawdź ścieżkę źródłową
+- Błąd G1 → napraw pliki źródłowe zgodnie z `gate_failures.json` i uruchom ponownie

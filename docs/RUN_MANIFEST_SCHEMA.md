@@ -1,21 +1,21 @@
 # Run Manifest Schema
 
-The run manifest (`reports/<run_id>/run_manifest.json`) is the machine-readable summary of a run's identity, scope, outcome, and evidence. It is produced at run completion and is required for all trusted runs.
+Manifest uruchomienia (`reports/<run_id>/run_manifest.json`) jest czytelnym maszynowo podsumowaniem tożsamości, zakresu, wyniku i dowodów uruchomienia. Jest produkowany po zakończeniu uruchomienia i jest wymagany dla wszystkich uruchomień `trusted`.
 
 ---
 
-## Purpose
+## Cel
 
-The run manifest is the single authoritative index of a run's evidence pack. A reviewer or automated tool can read the manifest to determine:
-- what command was run and with what parameters,
-- what the outcome was,
-- which artifacts were produced,
-- whether the evidence pack is complete,
-- which quality gates were evaluated and what their status was.
+Manifest uruchomienia jest jedynym autorytatywnym indeksem evidence pack uruchomienia. Recenzent lub narzędzie automatyczne może odczytać manifest, aby ustalić:
+- jakie polecenie zostało uruchomione i z jakimi parametrami,
+- jaki był wynik,
+- które artefakty zostały wyprodukowane,
+- czy evidence pack jest kompletny,
+- które bramki jakości zostały ocenione i jaki był ich status.
 
 ---
 
-## Schema
+## Schemat
 
 ```json
 {
@@ -83,74 +83,74 @@ The run manifest is the single authoritative index of a run's evidence pack. A r
 
 ---
 
-## Field Definitions
+## Definicje pól
 
-### Top-level fields
+### Pola najwyższego poziomu
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `schema_version` | integer | yes | Always `1` for this schema version |
-| `run_id` | string | yes | Unique run identifier. Must match SQLite `runs.run_id` |
-| `command` | string | yes | Full CLI invocation string |
-| `started_at` | string | yes | ISO 8601 UTC datetime |
-| `finished_at` | string | yes | ISO 8601 UTC datetime |
-| `exit_code` | integer | yes | 0, 1, 2, or 3 per exit code contract |
-| `status` | string | yes | `completed`, `failed`, or `aborted` |
-| `trusted` | boolean | yes | `true` only if all trusted-run criteria are met |
+| Pole | Typ | Wymagane | Opis |
+|------|-----|----------|------|
+| `schema_version` | liczba całkowita | tak | Zawsze `1` dla tej wersji schematu |
+| `run_id` | ciąg znaków | tak | Unikalny identyfikator uruchomienia. Musi odpowiadać SQLite `runs.run_id` |
+| `command` | ciąg znaków | tak | Pełny ciąg wywołania CLI |
+| `started_at` | ciąg znaków | tak | Data i czas UTC w formacie ISO 8601 |
+| `finished_at` | ciąg znaków | tak | Data i czas UTC w formacie ISO 8601 |
+| `exit_code` | liczba całkowita | tak | 0, 1, 2 lub 3 zgodnie z kontraktem kodu wyjścia |
+| `status` | ciąg znaków | tak | `completed`, `failed` lub `aborted` |
+| `trusted` | wartość logiczna | tak | `true` tylko jeśli wszystkie kryteria uruchomienia `trusted` są spełnione |
 
-### `evidence` object
+### Obiekt `evidence`
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `db_checksum` | string | yes | SHA-256 of SQLite file at run end. Format: `sha256:<hex>` |
-| `event_count` | integer | yes | Number of event log lines appended in this run |
-| `artifacts` | array | yes | One entry per artifact produced |
-| `complete` | boolean | yes | `true` if all required artifacts are present and non-empty |
+| Pole | Typ | Wymagane | Opis |
+|------|-----|----------|------|
+| `db_checksum` | ciąg znaków | tak | SHA-256 pliku SQLite na końcu uruchomienia. Format: `sha256:<hex>` |
+| `event_count` | liczba całkowita | tak | Liczba linii dziennika zdarzeń dołączonych w tym uruchomieniu |
+| `artifacts` | tablica | tak | Jeden wpis na każdy wyprodukowany artefakt |
+| `complete` | wartość logiczna | tak | `true` jeśli wszystkie wymagane artefakty są obecne i niepuste |
 
-### `gates` array
+### Tablica `gates`
 
-Each element describes one gate evaluation. Gates not relevant to the command are recorded with `status: "not_evaluated"`.
+Każdy element opisuje jedną ocenę bramki. Bramki nieistotne dla polecenia są rejestrowane ze `status: "not_evaluated"`.
 
-### `skips` array
+### Tablica `skips`
 
-Each active skip from `SKIP_REGISTER.md` that affected this run. Empty array if no skips were active.
+Każde aktywne pominięcie z `SKIP_REGISTER.md`, które wpłynęło na to uruchomienie. Pusta tablica, jeśli żadne pominięcia nie były aktywne.
 
-### `errors` array
+### Tablica `errors`
 
-Non-fatal errors encountered during the run. A run may exit 0 with non-empty `errors` if errors were per-entity and did not affect the overall outcome.
-
----
-
-## Validation Rules
-
-1. `run_id` must match a row in SQLite `runs` table with the same `run_id`.
-2. `db_checksum` must match the actual SHA-256 of the database file at the time the manifest was written.
-3. `evidence.complete` must be `false` if any artifact in the `artifacts` array has `size_bytes = 0`.
-4. `trusted` must be `false` if `evidence.complete = false`.
-5. `trusted` must be `false` if any skip in `skips` has `category = 3` or `category = 4`.
-6. Gate status `PASS` requires `evidence.complete = true`.
+Niekrytyczne błędy napotkane podczas uruchomienia. Uruchomienie może zakończyć się kodem 0 z niepustą tablicą `errors`, jeśli błędy dotyczyły poszczególnych encji i nie wpłynęły na ogólny wynik.
 
 ---
 
-## Production
+## Reguły walidacji
 
-The manifest is produced by `itdlab` at the end of every state-changing run, written to:
+1. `run_id` musi odpowiadać wierszowi w tabeli SQLite `runs` z tym samym `run_id`.
+2. `db_checksum` musi odpowiadać rzeczywistej wartości SHA-256 pliku bazy danych w momencie zapisania manifestu.
+3. `evidence.complete` musi być `false`, jeśli jakikolwiek artefakt w tablicy `artifacts` ma `size_bytes = 0`.
+4. `trusted` musi być `false`, jeśli `evidence.complete = false`.
+5. `trusted` musi być `false`, jeśli jakiekolwiek pominięcie w `skips` ma `category = 3` lub `category = 4`.
+6. Status bramki `PASS` wymaga `evidence.complete = true`.
+
+---
+
+## Produkcja
+
+Manifest jest produkowany przez `itdlab` na końcu każdego uruchomienia zmieniającego stan, zapisywany do:
 
 ```
 reports/<run_id>/run_manifest.json
 ```
 
-It is also referenced by `itdlab audit evidence <run_id>` for completeness verification.
+Jest też odwoływany przez `itdlab audit evidence <run_id>` do weryfikacji kompletności.
 
 ---
 
-## Internal references
+## Wewnętrzne odniesienia
 - `docs/EXECUTION_CONTRACT.md`
 - `docs/EVIDENCE_MODEL.md`
 - `docs/CONTEXT_VOCABULARY.md`
 - `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`
 
-## Review metadata
-- Owner: project team
-- Status: draft
+## Metadane przeglądu
+- Właściciel: zespół projektowy
+- Status: szkic
 - Last reviewed: 2026-03-30

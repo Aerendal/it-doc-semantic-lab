@@ -1,78 +1,78 @@
 # Quality Gates — Quick Reference
 
-This document is the **short operational reference** for quality-gate evaluation.
+Niniejszy dokument jest **krótką operacyjną referencją** do oceny bramek jakości.
 
-The full policy-level gate model is described separately in `docs/QUALITY_GATES_POLICY.md`.
+Pełny model bramek na poziomie polityki jest opisany osobno w `docs/QUALITY_GATES_POLICY.md`.
 
 ---
 
 ## Gate 1: Input Contract (before any processing)
 
-| Condition | Test Layer |
+| Warunek | Test Layer |
 |-----------|-----------|
-| All required source files present | Layer 1 |
-| All files readable | Layer 2 |
-| Zero encoding violations | Layer 3 |
-| All files have parseable structure | Layer 4 |
-| All files satisfy source schema contract | Layer 5 |
+| Wszystkie wymagane pliki źródłowe są obecne | Layer 1 |
+| Wszystkie pliki są czytelne | Layer 2 |
+| Zero naruszeń kodowania | Layer 3 |
+| Wszystkie pliki mają strukturę możliwą do sparsowania | Layer 4 |
+| Wszystkie pliki spełniają kontrakt schematu źródłowego | Layer 5 |
 
-**Blocked if:** Any condition fails → run aborts with `exit 1` and a contract failure report.
+**Zablokowane jeśli:** Dowolny warunek nie zostanie spełniony → przebieg jest przerywany z `exit 1` i raportem błędu kontraktu.
 
 ---
 
 ## Gate 2: Parse Quality (after ingest)
 
-| Condition | Test Layer |
+| Warunek | Test Layer |
 |-----------|-----------|
-| All fixture golden tests pass | Layer 8 |
-| No parser panics on any input | Layer 9 |
-| Parser output is deterministic | Layer 10 |
+| Wszystkie fixture golden tests przechodzą pomyślnie | Layer 8 |
+| Brak panik parsera na jakimkolwiek wejściu | Layer 9 |
+| Wynik parsera jest deterministyczny | Layer 10 |
 
-**Blocked if:** Any condition fails → normalization step does not start.
+**Zablokowane jeśli:** Dowolny warunek nie zostanie spełniony → krok normalizacji nie uruchamia się.
 
 ---
 
 ## Gate 3: Normalization Integrity (after normalize)
 
-| Condition | Test Layer |
+| Warunek | Test Layer |
 |-----------|-----------|
-| All canonical IDs are unique | Layer 11 |
-| Zero unresolved collisions | Layer 12 |
-| All aliases resolve cleanly | Layer 13 |
-| All domain fields have correct types | Layer 14 |
+| Wszystkie kanoniczne identyfikatory są unikalne | Layer 11 |
+| Zero nierozwiązanych kolizji | Layer 12 |
+| Wszystkie aliasy są rozwiązywane poprawnie | Layer 13 |
+| Wszystkie pola domeny mają poprawne typy | Layer 14 |
 
-**Blocked if:** Any condition fails → classify step does not start.
+**Zablokowane jeśli:** Dowolny warunek nie zostanie spełniony → krok klasyfikacji nie uruchamia się.
 
 ---
 
 ## Gate 4: Semantic Consistency (after classify + relations)
 
-| Condition | Test Layer |
+| Warunek | Test Layer |
 |-----------|-----------|
-| All inferred relations have non-empty explanation | Layer 18 |
-| Zero cycles in depends_on graph | Layer 19 |
-| Zero contradictory relations | Layer 17 |
+| Wszystkie wywnioskowane relacje mają niepuste wyjaśnienie | Layer 18 |
+| Zero cykli w grafie depends_on | Layer 19 |
+| Zero sprzecznych relacji | Layer 17 |
 
-**Blocked if:** Any condition fails → export step does not start.
+**Zablokowane jeśli:** Dowolny warunek nie zostanie spełniony → krok eksportu nie uruchamia się.
 
 ---
 
 ## Gate 5: Run Completeness (before export)
 
-| Condition | Test Layer |
+| Warunek | Test Layer |
 |-----------|-----------|
-| Evidence pack is complete | Layer 27 |
-| SQLite state is consistent with event log | Layer 25 |
-| Run record in SQLite has `status = 'completed'` | Layer 22 |
-| CLI exit code was 0 for all prior steps | Layer 21 |
+| Paczka dowodów jest kompletna | Layer 27 |
+| Stan SQLite jest spójny z logiem zdarzeń | Layer 25 |
+| Rekord przebiegu w SQLite ma `status = 'completed'` | Layer 22 |
+| Kod wyjścia CLI wynosił 0 dla wszystkich poprzednich kroków | Layer 21 |
 
-**Blocked if:** Any condition fails → export to reference repository is blocked.
+**Zablokowane jeśli:** Dowolny warunek nie zostanie spełniony → eksport do repozytorium referencyjnego jest zablokowany.
 
 ---
 
-## Gate Failure Protocol
+## Protokół awarii bramki
 
-1. Log failure to event log (`action: "gate_failed"`, `entity: "gate"`, `entity_id: "<gate_id>"`)
-2. Write failure details to `reports/<run_id>/gate_failures.json`
-3. Exit with code `2` (gate failure, distinct from error code `1`)
-4. Do not modify any downstream state
+1. Zaloguj błąd do logu zdarzeń (`action: "gate_failed"`, `entity: "gate"`, `entity_id: "<gate_id>"`)
+2. Zapisz szczegóły błędu do `reports/<run_id>/gate_failures.json`
+3. Zakończ z kodem `2` (błąd bramki, różny od kodu błędu `1`)
+4. Nie modyfikuj żadnego stanu poniżej

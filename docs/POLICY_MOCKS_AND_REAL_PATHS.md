@@ -1,57 +1,57 @@
 # Policy: Mocks and Real Paths
 
-This document defines which test layers may use mocked dependencies, which require real-path verification, and what "real-path" means in this repository.
+Dokument definiuje, które warstwy testowe mogą używać zaślepek (mocków), które wymagają weryfikacji na rzeczywistej ścieżce, oraz co oznacza „rzeczywista ścieżka" w tym repozytorium.
 
 ---
 
-## Principle
+## Zasada
 
-**A mock that hides a real failure is worse than no test at all.**
+**Mock ukrywający realne błędy jest gorszy niż brak testu.**
 
-Mocks are permitted where they isolate the unit under test from irrelevant infrastructure. They are restricted or forbidden where they would mask correctness failures, hide integration problems, or prevent evidence from being produced against real inputs.
+Mocki są dopuszczalne tam, gdzie izolują testowaną jednostkę od nieistotnej infrastruktury. Są ograniczone lub zakazane tam, gdzie maskowałyby błędy poprawności, ukrywały problemy integracyjne lub uniemożliwiały produkcję dowodów na podstawie rzeczywistych danych wejściowych.
 
 ---
 
-## Definitions
+## Definicje
 
 ### Mock-allowed
-The layer may use test doubles (stubs, fakes, in-memory implementations) for its dependencies. The layer's gate contribution is fully credible.
+Warstwa może używać zastępników testowych (stubów, fejków, implementacji in-memory) dla swoich zależności. Wkład warstwy do bramki jest w pełni wiarygodny.
 
 ### Mock-restricted
-The layer may use mocks only for clearly-irrelevant infrastructure (e.g., clock, random seed). Core I/O paths (filesystem, SQLite, event log) must be exercised with real implementations or faithful fakes backed by real file I/O. The gate contribution is credible only if real-path verification was also performed.
+Warstwa może używać mocków jedynie dla infrastruktury wyraźnie nieistotnej (np. zegar, ziarno losowości). Główne ścieżki I/O (system plików, SQLite, dziennik zdarzeń) muszą być realizowane z użyciem rzeczywistych implementacji lub wiernych fejków opartych na rzeczywistym I/O plikowym. Wkład do bramki jest wiarygodny tylko wtedy, gdy przeprowadzono również weryfikację na rzeczywistej ścieżce.
 
 ### Mock-forbidden
-The layer must exercise real implementations — real filesystem, real SQLite on disk, real event log file, real source documents. Any use of mocks for the primary dependencies invalidates the layer's gate contribution.
+Warstwa musi korzystać z rzeczywistych implementacji — rzeczywistego systemu plików, rzeczywistego SQLite na dysku, rzeczywistego pliku dziennika zdarzeń, rzeczywistych dokumentów źródłowych. Użycie mocków dla głównych zależności unieważnia wkład warstwy do bramki.
 
-### Real-path verification
-A test run in which:
-1. The input is a real file from `internal/testkit/fixtures/` or `sources/`.
-2. SQLite writes go to a real (temporary) database file on disk.
-3. Event log appends go to a real (temporary) JSONL file on disk.
-4. The output is compared to a known-good golden file or expected structure.
-
----
-
-## Layer Mock Policy
-
-| Level | Layers | Policy | Notes |
-|-------|--------|--------|-------|
-| A — Contract & Input | 1–5 | **Mock-forbidden** | Must read real files from `sources/` or fixtures |
-| B — Parser & Extraction | 6–7 | Mock-allowed | Unit and fixture tests may use in-memory strings |
-| B — Parser & Extraction | 8–10 | **Mock-restricted** | Golden and determinism tests must use real fixture files |
-| C — Normalization | 11–13 | Mock-allowed | Canonical ID and alias logic may use in-memory inputs |
-| C — Normalization | 14–15 | **Mock-restricted** | Type and migration tests require real SQLite on disk |
-| D — Relations & Semantics | 16 | Mock-allowed | Rule unit tests may use in-memory document stubs |
-| D — Relations & Semantics | 17–20 | **Mock-restricted** | Consistency, explainability, cycle, and influence tests require real SQLite |
-| E — Interface & Run | 21 | **Mock-restricted** | CLI contract tests require real binary invocation; may use temp DB |
-| E — Interface & Run | 22–25 | **Mock-forbidden** | End-to-end, resume, event log integrity, and materialization tests require full real stack |
-| F — Operational & Audit | 26–30 | **Mock-forbidden** | All operational and audit layers require real filesystem, real DB, real event log |
+### Weryfikacja na rzeczywistej ścieżce
+Przebieg testowy, w którym:
+1. Dane wejściowe to rzeczywisty plik z `internal/testkit/fixtures/` lub `sources/`.
+2. Zapisy SQLite trafiają do rzeczywistego (tymczasowego) pliku bazy danych na dysku.
+3. Dopisywanie do dziennika zdarzeń trafia do rzeczywistego (tymczasowego) pliku JSONL na dysku.
+4. Dane wyjściowe są porównywane ze znanym poprawnym plikiem golden lub oczekiwaną strukturą.
 
 ---
 
-## Real-Path Verification Requirement
+## Polityka mocków dla warstw
 
-The following layers have a **mandatory real-path verification run** in addition to any mock-based unit tests:
+| Poziom | Warstwy | Polityka | Uwagi |
+|--------|---------|----------|-------|
+| A — Contract & Input | 1–5 | **Mock-forbidden** | Muszą czytać rzeczywiste pliki z `sources/` lub fixtures |
+| B — Parser & Extraction | 6–7 | Mock-allowed | Testy jednostkowe i fixture mogą używać ciągów in-memory |
+| B — Parser & Extraction | 8–10 | **Mock-restricted** | Testy golden i determinizmu muszą używać rzeczywistych plików fixture |
+| C — Normalization | 11–13 | Mock-allowed | Logika kanonicznego ID i aliasów może używać danych wejściowych in-memory |
+| C — Normalization | 14–15 | **Mock-restricted** | Testy typów i migracji wymagają rzeczywistego SQLite na dysku |
+| D — Relations & Semantics | 16 | Mock-allowed | Testy jednostkowe reguł mogą używać stubów dokumentów in-memory |
+| D — Relations & Semantics | 17–20 | **Mock-restricted** | Testy spójności, wyjaśnialności, cykli i wpływu wymagają rzeczywistego SQLite |
+| E — Interface & Run | 21 | **Mock-restricted** | Testy kontraktu CLI wymagają wywołania rzeczywistego binarnego; mogą używać tymczasowej bazy |
+| E — Interface & Run | 22–25 | **Mock-forbidden** | Testy end-to-end, wznawiania, integralności dziennika zdarzeń i materializacji wymagają pełnego stosu |
+| F — Operational & Audit | 26–30 | **Mock-forbidden** | Wszystkie warstwy operacyjne i audytowe wymagają rzeczywistego systemu plików, bazy danych i dziennika zdarzeń |
+
+---
+
+## Wymóg weryfikacji na rzeczywistej ścieżce
+
+Następujące warstwy mają **obowiązkowy przebieg weryfikacji na rzeczywistej ścieżce** poza wszelkimi testami jednostkowymi opartymi na mockach:
 
 - Layer 8 (Golden Extraction Tests)
 - Layer 10 (Determinism Tests)
@@ -61,22 +61,22 @@ The following layers have a **mandatory real-path verification run** in addition
 - Layer 26 (Reproducibility Tests)
 - Layer 27 (Evidence Pack Tests)
 
-For these layers, a test suite that runs only against mocks or in-memory state does not satisfy the layer's PASS criterion.
+Dla tych warstw zestaw testów uruchamiany wyłącznie na mockach lub stanie in-memory nie spełnia kryterium PASS warstwy.
 
 ---
 
-## Fixture and Golden File Policy
+## Polityka plików fixture i golden
 
-- Fixture files live in `internal/testkit/fixtures/`. They are real Markdown files representing known document inputs.
-- Golden files live in `internal/testkit/golden/`. They are the known-correct outputs for specific inputs.
-- Neither fixture nor golden files may be auto-generated by the same code under test without an independent review step.
-- Golden files must be updated intentionally with `go test ./... -update`, reviewed in the PR diff, and approved before merge.
+- Pliki fixture znajdują się w `internal/testkit/fixtures/`. Są to rzeczywiste pliki Markdown reprezentujące znane dane wejściowe dokumentów.
+- Pliki golden znajdują się w `internal/testkit/golden/`. Są to znane poprawne dane wyjściowe dla konkretnych danych wejściowych.
+- Ani pliki fixture, ani golden nie mogą być automatycznie generowane przez ten sam testowany kod bez niezależnego kroku przeglądu.
+- Pliki golden muszą być aktualizowane celowo poleceniem `go test ./... -update`, przeglądane w diff PR i zatwierdzone przed scaleniem.
 
 ---
 
-## When Mock-Restricted Means "Real for Core, Mock for Edges"
+## Kiedy mock-restricted oznacza „rzeczywiste dla rdzenia, mock dla krawędzi"
 
-For mock-restricted layers, the acceptable pattern is:
+Dla warstw mock-restricted dopuszczalny wzorzec to:
 
 ```
 core path: real filesystem / real SQLite / real event log
@@ -85,17 +85,17 @@ edges:     mock random (use fixed seed)
 edges:     mock external HTTP (not applicable in this repo)
 ```
 
-The core path must never be replaced by a mock in a mock-restricted layer.
+Ścieżka rdzenia nigdy nie może być zastąpiona mockiem w warstwie mock-restricted.
 
 ---
 
-## Gate Credibility and Mock Policy
+## Wiarygodność bramki a polityka mocków
 
-| Mock policy | Gate contribution |
-|-------------|------------------|
-| Mock-allowed | Fully credible |
-| Mock-restricted — real-path verification present | Fully credible |
-| Mock-restricted — real-path verification absent | Gate contribution: `degraded` |
-| Mock-forbidden — mock used | Gate contribution: **invalid** (layer does not count) |
+| Polityka mocków | Wkład do bramki |
+|----------------|----------------|
+| Mock-allowed | W pełni wiarygodny |
+| Mock-restricted — weryfikacja na rzeczywistej ścieżce obecna | W pełni wiarygodny |
+| Mock-restricted — weryfikacja na rzeczywistej ścieżce nieobecna | Wkład do bramki: `degraded` |
+| Mock-forbidden — użyto mocka | Wkład do bramki: **nieważny** (warstwa nie jest liczona) |
 
-A layer with `mock-forbidden` that was executed using mocks must be registered as a skip (Category 3) per `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.
+Warstwa oznaczona `mock-forbidden`, wykonana z użyciem mocków, musi być zarejestrowana jako pominięcie (Kategoria 3) zgodnie z `docs/POLICY_SKIPS_AND_EXCEPTIONS.md`.

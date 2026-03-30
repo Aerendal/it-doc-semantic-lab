@@ -1,66 +1,66 @@
 # Runbook: Bootstrap Local Environment
 
-## Prerequisites
+## Wymagania wstępne
 
 - Go 1.21+
 - `make`
-- `sqlite3` CLI (for `db-init` and inspection)
+- `sqlite3` CLI (do `db-init` i inspekcji)
 - Git
 
-## Steps
+## Kroki
 
-### 1. Clone and enter the repository
+### 1. Sklonuj repozytorium i wejdź do katalogu
 
 ```sh
 cd /path/to/it-doc-semantic-lab
 ```
 
-### 2. Tidy dependencies
+### 2. Uporządkuj zależności
 
 ```sh
 make tidy
 ```
 
-### 3. Build the CLI
+### 3. Zbuduj CLI
 
 ```sh
 make build
 ```
 
-Binary is placed at `bin/itdlab`.
+Plik binarny zostanie umieszczony w `bin/itdlab`.
 
-### 4. Initialise the database
+### 4. Zainicjalizuj bazę danych
 
 ```sh
 make db-init
 ```
 
-Creates `db/semantic_index.sqlite` with schema v1.
+Tworzy `db/semantic_index.sqlite` ze schematem v1.
 
-### 5. Create runtime directories (if not present)
+### 5. Utwórz katalogi robocze (jeśli nie istnieją)
 
 ```sh
 mkdir -p runs reports normalized
 ```
 
-### 6. Verify the build
+### 6. Zweryfikuj poprawność kompilacji
 
 ```sh
 ./bin/itdlab --help
 ```
 
-Expected: help text listing `ingest`, `normalize`, `classify`, `relations`, `export`, `audit`.
+Oczekiwany wynik: tekst pomocy zawierający polecenia `ingest`, `normalize`, `classify`, `relations`, `export`, `audit`.
 
-### 7. Run short tests
+### 7. Uruchom skrócone testy
 
 ```sh
 make test-short
 ```
 
-Expected: all tests pass.
+Oczekiwany wynik: wszystkie testy zaliczone.
 
-## Stop Conditions
+## Warunki zatrzymania
 
-- If `make tidy` fails: check internet connectivity for Go module download
-- If `make build` fails: check Go version (`go version` must be 1.21+)
-- If `make db-init` fails: check `sqlite3` is installed (`which sqlite3`)
+- Jeśli `make tidy` zakończy się błędem: sprawdź połączenie z internetem potrzebne do pobrania modułów Go
+- Jeśli `make build` zakończy się błędem: sprawdź wersję Go (`go version` musi wynosić 1.21+)
+- Jeśli `make db-init` zakończy się błędem: sprawdź, czy `sqlite3` jest zainstalowane (`which sqlite3`)

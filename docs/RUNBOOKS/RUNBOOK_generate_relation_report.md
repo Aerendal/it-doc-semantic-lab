@@ -1,55 +1,55 @@
 # Runbook: Generate Relation Report
 
-## Prerequisites
+## Wymagania wstępne
 
-- Normalize completed successfully
-- `documents` table has rows with `status = 'normalized'`
-- Relation rules exist in `relation_rules` table
+- Normalizacja zakończona pomyślnie
+- Tabela `documents` zawiera wiersze ze statusem `status = 'normalized'`
+- Reguły relacji istnieją w tabeli `relation_rules`
 
-## Steps
+## Kroki
 
-### 1. Show all relations
+### 1. Wyświetl wszystkie relacje
 
 ```sh
 ./bin/itdlab relations show
 ```
 
-### 2. Show relations for a specific document
+### 2. Wyświetl relacje dla konkretnego dokumentu
 
 ```sh
 ./bin/itdlab relations show --doc <document_id>
 ```
 
-### 3. Explain a specific relation
+### 3. Wyjaśnij konkretną relację
 
 ```sh
 ./bin/itdlab relations explain --rel <relation_id>
 ```
 
-### 4. Check relation count in database
+### 4. Sprawdź liczbę relacji w bazie danych
 
 ```sh
 sqlite3 db/semantic_index.sqlite "SELECT type, count(*) FROM relations GROUP BY type;"
 ```
 
-### 5. Check for relations without explanation
+### 5. Sprawdź relacje bez wyjaśnienia
 
 ```sh
 sqlite3 db/semantic_index.sqlite \
   "SELECT id, from_id, to_id FROM relations WHERE explanation = '' OR explanation IS NULL;"
 ```
 
-Expected: zero rows. (Gate 4 blocks if any exist.)
+Oczekiwany wynik: zero wierszy. (G4 blokuje, jeśli jakiekolwiek istnieją.)
 
-### 6. Check for dependency cycles
+### 6. Sprawdź cykle w zależnościach
 
 ```sh
-# Manual check for small graphs:
+# Ręczna weryfikacja dla małych grafów:
 sqlite3 db/semantic_index.sqlite \
   "SELECT from_id, to_id FROM relations WHERE type = 'depends_on';"
 ```
 
-## Stop Conditions
+## Warunki zatrzymania
 
-- Relations with empty explanation → fix inference rules; re-run
-- Cycles detected in depends_on → review rules and document structure
+- Relacje z pustym wyjaśnieniem → napraw reguły wnioskowania i uruchom ponownie
+- Wykryte cykle w depends_on → przejrzyj reguły i strukturę dokumentów

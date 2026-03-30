@@ -1,63 +1,63 @@
 # Runbook: Rebuild SQLite
 
-## When to Use
+## Kiedy używać
 
-- Database file is corrupt or missing
-- Schema migration failed midway
-- Starting fresh after major structural changes
+- Plik bazy danych jest uszkodzony lub nie istnieje
+- Migracja schematu nie zakończyła się pomyślnie
+- Świeży start po znaczących zmianach strukturalnych
 
-## Prerequisites
+## Wymagania wstępne
 
-- `db/schema_v1.sql` exists
-- Event log `runs/events.jsonl` is intact (for replay if needed)
+- Istnieje plik `db/schema_v1.sql`
+- Dziennik zdarzeń `runs/events.jsonl` jest nienaruszony (do ewentualnego odtworzenia)
 
-## Steps
+## Kroki
 
-### 1. Back up existing database (if recoverable)
+### 1. Utwórz kopię zapasową istniejącej bazy (jeśli jest odtwarzalna)
 
 ```sh
 cp db/semantic_index.sqlite db/semantic_index.sqlite.bak
 ```
 
-### 2. Remove corrupt database
+### 2. Usuń uszkodzoną bazę danych
 
 ```sh
 rm db/semantic_index.sqlite
 ```
 
-### 3. Reinitialise schema
+### 3. Ponownie zainicjalizuj schemat
 
 ```sh
 make db-init
 ```
 
-### 4. Re-ingest from sources
+### 4. Ponownie przetworz źródła
 
 ```sh
 ./bin/itdlab ingest run --source sources/
 ```
 
-### 5. Re-run normalization
+### 5. Ponownie uruchom normalizację
 
 ```sh
 ./bin/itdlab normalize apply
 ```
 
-### 6. Re-run relations
+### 6. Ponownie uruchom relacje
 
 ```sh
 ./bin/itdlab relations show
 ```
 
-### 7. Verify row counts match backup (if available)
+### 7. Zweryfikuj zgodność liczby wierszy z kopią zapasową (jeśli dostępna)
 
 ```sh
 sqlite3 db/semantic_index.sqlite "SELECT count(*) FROM documents;"
 sqlite3 db/semantic_index.sqlite.bak "SELECT count(*) FROM documents;"
 ```
 
-## Notes
+## Uwagi
 
-- The event log is the audit trail — it does not need to be rebuilt.
-- If the event log is also lost, re-ingest from original source files.
-- Do not commit `db/semantic_index.sqlite` to git (it is gitignored).
+- Dziennik zdarzeń jest śladem audytowym — nie wymaga odbudowy.
+- Jeśli dziennik zdarzeń również zaginął, ponownie przetworz oryginalne pliki źródłowe.
+- Nie dodawaj `db/semantic_index.sqlite` do gita (jest objęty gitignore).

@@ -2,36 +2,36 @@
 
 | Field | Value |
 |-------|-------|
-| Status | Accepted |
+| Status | Zaakceptowany |
 | Date | 2026-03-30 |
-| Deciders | project team |
+| Deciders | zespół projektowy |
 | Supersedes | — |
 | Superseded by | — |
 
 ---
 
-## Context
+## Kontekst
 
-The system processes documents, infers relations, and normalises names through a series of runs. Each run modifies SQLite state. Without an independent record of what happened, when, and in what order, there is no way to:
-- reconstruct the history of how a document reached its current state,
-- compare two runs to identify regressions,
-- audit a run after the fact without re-running it,
-- detect whether SQLite state was modified outside a managed run.
+System przetwarza dokumenty, wnioskuje relacje i normalizuje nazwy w trakcie kolejnych uruchomień. Każde uruchomienie modyfikuje stan SQLite. Bez niezależnego zapisu tego, co się stało, kiedy i w jakiej kolejności, nie ma możliwości:
+- odtworzenia historii, w jaki sposób dokument osiągnął swój bieżący stan,
+- porównania dwóch uruchomień w celu wykrycia regresji,
+- audytu uruchomienia po fakcie bez jego ponownego wykonania,
+- wykrycia, czy stan SQLite został zmodyfikowany poza zarządzanym uruchomieniem.
 
-SQLite is the source of truth for current state, but it does not natively track historical state or cross-run provenance. Something else must serve as the audit backbone.
+SQLite jest źródłem prawdy dla bieżącego stanu, ale natywnie nie śledzi stanu historycznego ani proweniencji między uruchomieniami. Coś innego musi pełnić rolę szkieletu audytu.
 
 ---
 
-## Decision
+## Decyzja
 
-Every state-changing operation in `itdlab` appends a structured JSON event to an append-only event log file (`runs/events.jsonl`). The event log is:
+Każda operacja zmieniająca stan w `itdlab` dołącza ustrukturyzowane zdarzenie JSON do append-only pliku logu zdarzeń (`runs/events.jsonl`). Log zdarzeń jest:
 
-1. **Append-only** — existing lines are never modified or deleted.
-2. **Structured** — each line is a valid JSON object with mandatory fields.
-3. **Run-scoped** — every event carries a `run_id` that ties it to a specific invocation.
-4. **Independent of SQLite** — the log is written to a separate file; it does not depend on SQLite transactions.
+1. **Append-only** — istniejące linie nigdy nie są modyfikowane ani usuwane.
+2. **Ustrukturyzowany** — każda linia to prawidłowy obiekt JSON z obowiązkowymi polami.
+3. **Powiązany z uruchomieniem** — każde zdarzenie niesie `run_id` wiążący je z konkretnym wywołaniem.
+4. **Niezależny od SQLite** — log jest zapisywany do osobnego pliku; nie zależy od transakcji SQLite.
 
-### Mandatory event fields
+### Obowiązkowe pola zdarzeń
 
 ```json
 {
@@ -46,82 +46,82 @@ Every state-changing operation in `itdlab` appends a structured JSON event to an
 }
 ```
 
-Additional fields are permitted. The mandatory set must always be present.
+Dodatkowe pola są dozwolone. Obowiązkowy zestaw musi być zawsze obecny.
 
 ---
 
-## Alternatives Considered
+## Rozważane alternatywy
 
-### 1. SQLite-only history tables
+### 1. Tylko SQLite — tabele historii
 
-**Approach:** Add `_history` shadow tables that capture previous values on UPDATE/DELETE.
+**Podejście:** Dodaj tabele cieni `_history` przechwytujące poprzednie wartości przy UPDATE/DELETE.
 
-**Rejected because:**
-- Triggers in SQLite are brittle and hard to test.
-- History tables in the same file as current state create a single point of failure.
-- Reading run history requires SQL joins across many tables; a flat log is easier to stream and grep.
-- History tables do not survive if the database is rebuilt from scratch.
+**Odrzucono, ponieważ:**
+- Wyzwalacze w SQLite są kruche i trudne do testowania.
+- Tabele historii w tym samym pliku co bieżący stan tworzą pojedynczy punkt awarii.
+- Odczyt historii uruchomień wymaga złączeń SQL przez wiele tabel; płaski log jest łatwiejszy do strumieniowania i przeszukiwania.
+- Tabele historii nie przetrwają, jeśli baza danych zostanie odbudowana od podstaw.
 
-### 2. Write-ahead log (WAL) as audit record
+### 2. Write-ahead log (WAL) jako zapis audytowy
 
-**Approach:** Rely on SQLite's WAL file as the event record.
+**Podejście:** Użyj pliku WAL SQLite jako zapisu zdarzeń.
 
-**Rejected because:**
-- WAL files are checkpointed and overwritten; they are not a permanent audit trail.
-- WAL format is binary; it is not human-readable without tooling.
-- WAL is implementation-specific and not part of the public API.
+**Odrzucono, ponieważ:**
+- Pliki WAL są checkpointowane i nadpisywane; nie stanowią trwałego śladu audytowego.
+- Format WAL jest binarny; nie jest czytelny dla człowieka bez narzędzi.
+- WAL jest specyficzny dla implementacji i nie jest częścią publicznego API.
 
-### 3. Structured logging only (stdout)
+### 3. Wyłącznie logowanie strukturalne (stdout)
 
-**Approach:** Emit structured log lines to stdout; redirect to file by the caller.
+**Podejście:** Emituj ustrukturyzowane linie logu na stdout; przekieruj do pliku przez wywołującego.
 
-**Rejected because:**
-- Stdout capture depends on the shell invocation; it can be lost.
-- Stdout mixes diagnostic output with audit events; filtering is fragile.
-- Stdout is not append-only by design; it can be truncated.
-
----
-
-## Consequences
-
-### Positive
-
-- Complete history of all state changes is available for any run, including runs that failed or were aborted.
-- A run can be reconstructed from the event log without access to the current SQLite state.
-- Two runs can be diffed by comparing their event log slices.
-- The event log can be replayed to detect if SQLite diverges from the expected state.
-- Forensic review after a contract breach (exit code 3) is possible even if SQLite is corrupted.
-
-### Negative / Accepted tradeoffs
-
-- The event log grows indefinitely. There is currently no compaction policy.
-- Appending to JSONL on every event is a sequential I/O operation; it is a bottleneck for high-volume runs.
-- The event log and SQLite can temporarily diverge between a SQLite write and the subsequent log append. This is accepted; the invariant (I1 in `EXECUTION_CONTRACT.md`) requires SQLite write before log append, not atomicity of both.
-
-### Deferred
-
-- Cross-run replay tooling (`itdlab audit replay`) is not implemented in v1.
-- Compaction / archival policy is deferred.
-- Event log signing / tamper detection is deferred.
+**Odrzucono, ponieważ:**
+- Przechwytywanie stdout zależy od wywołania powłoki; może zostać utracone.
+- Stdout miesza wyjście diagnostyczne ze zdarzeniami audytowymi; filtrowanie jest kruche.
+- Stdout nie jest z założenia append-only; może zostać obcięty.
 
 ---
 
-## Implementation Notes
+## Konsekwencje
 
-- Event log is written by `internal/adapters/jsonl/event_log.go`.
-- Mutex-protected append; safe for concurrent goroutines within a single run.
-- Each run produces a separate slice of events identifiable by `run_id`.
-- `itdlab audit runs` reads the event log to list historical runs.
+### Pozytywne
+
+- Kompletna historia wszystkich zmian stanu jest dostępna dla każdego uruchomienia, w tym uruchomień zakończonych niepowodzeniem lub przerwanych.
+- Uruchomienie można odtworzyć z logu zdarzeń bez dostępu do bieżącego stanu SQLite.
+- Dwa uruchomienia można porównać, zestawiając ich wycinki logu zdarzeń.
+- Log zdarzeń można odtworzyć, aby wykryć rozbieżność SQLite z oczekiwanym stanem.
+- Analiza śledcza po naruszeniu kontraktu (exit code 3) jest możliwa nawet jeśli SQLite jest uszkodzony.
+
+### Negatywne / zaakceptowane kompromisy
+
+- Log zdarzeń rośnie w nieskończoność. Obecnie nie ma polityki kompaktowania.
+- Dołączanie do JSONL przy każdym zdarzeniu jest sekwencyjną operacją I/O; stanowi wąskie gardło przy uruchomieniach o dużej objętości.
+- Log zdarzeń i SQLite mogą tymczasowo się rozbiec między zapisem do SQLite a kolejnym dołączeniem do logu. Jest to zaakceptowane; niezmiennik (I1 w `EXECUTION_CONTRACT.md`) wymaga zapisu do SQLite przed dołączeniem do logu, a nie atomowości obu operacji.
+
+### Odroczone
+
+- Narzędzie do odtwarzania między uruchomieniami (`itdlab audit replay`) nie jest zaimplementowane w v1.
+- Polityka kompaktowania / archiwizacji jest odroczona.
+- Podpisywanie logu zdarzeń / wykrywanie manipulacji jest odroczone.
 
 ---
 
-## Internal references
+## Uwagi implementacyjne
+
+- Log zdarzeń jest zapisywany przez `internal/adapters/jsonl/event_log.go`.
+- Dołączanie chronione muteksem; bezpieczne dla współbieżnych goroutine w ramach jednego uruchomienia.
+- Każde uruchomienie tworzy osobny wycinek zdarzeń identyfikowalny przez `run_id`.
+- `itdlab audit runs` odczytuje log zdarzeń, aby wylistować historyczne uruchomienia.
+
+---
+
+## Odwołania wewnętrzne
 - `docs/EXECUTION_ASSURANCE_PROGRAM.md`
 - `docs/EXECUTION_CONTRACT.md`
 - `docs/EVIDENCE_MODEL.md`
 - `docs/ADR/ADR-001-sqlite-as-source-of-truth.md`
 
-## Review metadata
-- Owner: project team
-- Status: accepted
+## Metadane przeglądu
+- Owner: zespół projektowy
+- Status: zaakceptowany
 - Last reviewed: 2026-03-30

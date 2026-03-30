@@ -1,48 +1,48 @@
 # Runbook: Run Normalization
 
-## Prerequisites
+## Wymagania wstępne
 
-- Ingest completed successfully
-- `documents` table has rows with `status = 'ingested'`
+- Ingest zakończony pomyślnie
+- Tabela `documents` zawiera wiersze ze statusem `status = 'ingested'`
 
-## Steps
+## Kroki
 
-### 1. Preview normalization
+### 1. Podgląd normalizacji
 
 ```sh
 ./bin/itdlab normalize preview
 ```
 
-Review output — check for unexpected canonical ID changes or collisions.
+Przejrzyj wynik — sprawdź nieoczekiwane zmiany canonical ID lub kolizje.
 
-### 2. Apply normalization
+### 2. Zastosuj normalizację
 
 ```sh
 ./bin/itdlab normalize apply
 ```
 
-### 3. Verify canonical IDs
+### 3. Zweryfikuj canonical IDs
 
 ```sh
 sqlite3 db/semantic_index.sqlite "SELECT id, canonical_id, raw_name FROM documents;"
 ```
 
-### 4. Check for collisions
+### 4. Sprawdź kolizje
 
 ```sh
 sqlite3 db/semantic_index.sqlite \
   "SELECT canonical_id, count(*) as n FROM documents GROUP BY canonical_id HAVING n > 1;"
 ```
 
-Expected: zero rows. If collisions exist, resolve per PLAYBOOK_normalization.md before proceeding.
+Oczekiwany wynik: zero wierszy. Jeśli kolizje istnieją, rozwiąż je zgodnie z PLAYBOOK_normalization.md przed kontynuacją.
 
-### 5. Review normalization report
+### 5. Przejrzyj raport normalizacji
 
 ```sh
 cat reports/<run_id>/normalization_report.json
 ```
 
-## Stop Conditions
+## Warunki zatrzymania
 
-- Collision count > 0 → resolve before export (Gate 3)
-- Unexpected canonical ID changes → re-check normalization rules
+- Liczba kolizji > 0 → rozwiąż przed eksportem (G3)
+- Nieoczekiwane zmiany canonical ID → sprawdź ponownie reguły normalizacji

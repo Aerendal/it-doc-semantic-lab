@@ -1,63 +1,63 @@
 # Playbook: Export to Repo 1
 
-## Purpose
+## Cel
 
-Defines the strategy for promoting stable, validated semantic metadata from this lab to the reference repository (`IT-Dokumentacja`).
-
----
-
-## What Is Exported?
-
-Only **stable, gate-validated** metadata is promoted. Never raw or intermediate state.
-
-Exported artifacts:
-- Document canonical IDs and classes
-- Section role mappings (stable ones only)
-- Relation graph (validated edges only)
-- Authority coverage report
+Definiuje strategię promowania stabilnych, zwalidowanych metadanych semantycznych z tego laboratorium do repozytorium referencyjnego (`IT-Dokumentacja`).
 
 ---
 
-## Pre-Export Requirements
+## Co jest eksportowane?
 
-All of the following must be true before export:
+Promowane są wyłącznie **stabilne, zwalidowane przez bramy** metadane. Nigdy surowy ani pośredni stan.
 
-1. Gate 1–5 have all passed for the current run
-2. All relations have non-empty explanations (Layer 18)
-3. Evidence pack is complete (Layer 27)
-4. No unresolved canonical ID collisions (Gate 3)
-
-If any condition is not met, `itdlab export repo1` exits with code `2`.
+Eksportowane artefakty:
+- Kanoniczne identyfikatory i klasy dokumentów
+- Mapowania ról sekcji (wyłącznie stabilne)
+- Graf relacji (wyłącznie zwalidowane krawędzie)
+- Raport pokrycia organów
 
 ---
 
-## Export Process
+## Wymagania przed eksportem
+
+Wszystkie poniższe warunki muszą być spełnione przed eksportem:
+
+1. Gate 1–5 przeszły pomyślnie dla bieżącego uruchomienia
+2. Wszystkie relacje posiadają niepuste wyjaśnienia (Layer 18)
+3. Pakiet dowodów jest kompletny (Layer 27)
+4. Brak nierozwiązanych kolizji kanonicznych identyfikatorów (Gate 3)
+
+Jeśli którykolwiek warunek nie jest spełniony, `itdlab export repo1` kończy działanie z kodem `2`.
+
+---
+
+## Proces eksportu
 
 ```
 itdlab export repo1 --target ../IT-Dokumentacja/
 ```
 
-This:
-1. Validates all quality gates
-2. Generates export artifacts in `normalized/`
-3. Copies stable files to the target repository path
-4. Writes `export_manifest.json` listing all promoted files
-5. Appends `exported` events to JSONL log
+Polecenie:
+1. Waliduje wszystkie bramy jakości
+2. Generuje artefakty eksportu w `normalized/`
+3. Kopiuje stabilne pliki do docelowego repozytorium
+4. Zapisuje `export_manifest.json` z listą wszystkich promowanych plików
+5. Dołącza zdarzenia `exported` do dziennika JSONL
 
 ---
 
-## What Is NOT Exported
+## Co NIE jest eksportowane
 
-- Raw source files
-- Intermediate normalization state
-- Experimental or low-confidence relations (confidence < 0.8)
-- SQLite database (stays in lab only)
-- Event log (stays in lab only)
+- Surowe pliki źródłowe
+- Pośredni stan normalizacji
+- Eksperymentalne lub mało pewne relacje (confidence < 0.8)
+- Baza danych SQLite (pozostaje wyłącznie w laboratorium)
+- Dziennik zdarzeń (pozostaje wyłącznie w laboratorium)
 
 ---
 
-## Rollback
+## Wycofanie zmian
 
-Export is not destructive to the lab. To undo a promotion to repo 1:
-- Use `git revert` in the reference repository
-- The lab state is unaffected
+Eksport nie jest destrukcyjny dla laboratorium. Aby cofnąć promocję do repo 1:
+- Użyj `git revert` w repozytorium referencyjnym
+- Stan laboratorium pozostaje nienaruszony
